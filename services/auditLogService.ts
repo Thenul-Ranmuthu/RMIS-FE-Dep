@@ -4,8 +4,7 @@ import { AuditLog, AuditLogFilters } from "@/types/auditLog";
 import { getToken } from "@/services/authService";
 
 const BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  "http://rmis-backend.malaysiawest.azurecontainer.io:5050";
+  process.env.NEXT_PUBLIC_API_URL || "https://www.rmis.space/api";
 
 const authHeaders = () => ({
   Authorization: `Bearer ${getToken()}`,

@@ -8,8 +8,7 @@ import {
 import { getToken } from "@/services/authService";
 
 const BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  "http://rmis-backend.malaysiawest.azurecontainer.io:5050";
+  process.env.NEXT_PUBLIC_API_URL || "https://www.rmis.space/api";
 
 // ── Helper: build auth headers ─────────────────────────────────────────────
 const authHeaders = (token?: string | null) => ({

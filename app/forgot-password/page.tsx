@@ -4,8 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  "http://rmis-backend.malaysiawest.azurecontainer.io:5050";
+  process.env.NEXT_PUBLIC_API_URL || "https://www.rmis.space/api";
 
 type Status = "idle" | "loading" | "success" | "error";
 

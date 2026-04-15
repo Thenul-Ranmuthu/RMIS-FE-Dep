@@ -45,14 +45,14 @@
 //   const getLoginEndpoint = (role: string): string => {
 //     switch (role) {
 //       case "Technician":
-//         return "http://rmis-backend.malaysiawest.azurecontainer.io:5050/auth/technician/login";
+//         return "https://www.rmis.space/api/auth/technician/login";
 //       case "Company":
-//         return "http://rmis-backend.malaysiawest.azurecontainer.io:5050/auth/company/login";
+//         return "https://www.rmis.space/api/auth/company/login";
 //       case "Public User":
 //         // Return a placeholder - you'll need to implement this endpoint
-//         return "http://rmis-backend.malaysiawest.azurecontainer.io:5050/auth/user/login";
+//         return "https://www.rmis.space/api/auth/user/login";
 //       default:
-//         return "http://rmis-backend.malaysiawest.azurecontainer.io:5050/auth/technician/login";
+//         return "https://www.rmis.space/api/auth/technician/login";
 //     }
 //   };
 
@@ -491,14 +491,14 @@ export default function LoginCard() {
   const getLoginEndpoint = (role: string): string => {
     switch (role) {
       case "Technician":
-        return "http://rmis-backend.malaysiawest.azurecontainer.io:5050/auth/technician/login";
+        return "https://www.rmis.space/api/auth/technician/login";
       case "Company":
-        return "http://rmis-backend.malaysiawest.azurecontainer.io:5050/auth/company/login";
+        return "https://www.rmis.space/api/auth/company/login";
       case "Public User":
         // Return a placeholder - you'll need to implement this endpoint
-        return "http://rmis-backend.malaysiawest.azurecontainer.io:5050/auth/user/login";
+        return "https://www.rmis.space/api/auth/user/login";
       default:
-        return "http://rmis-backend.malaysiawest.azurecontainer.io:5050/auth/technician/login";
+        return "https://www.rmis.space/api/auth/technician/login";
     }
   };
 

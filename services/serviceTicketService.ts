@@ -1,8 +1,7 @@
 import { getToken } from "./authService";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  "http://rmis-backend.malaysiawest.azurecontainer.io:5050";
+  process.env.NEXT_PUBLIC_API_URL || "https://www.rmis.space/api";
 
 export interface ServiceTicketResponse {
   id: number;

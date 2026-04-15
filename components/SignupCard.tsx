@@ -223,7 +223,7 @@ export default function SignupCard() {
     try {
       setIsSendingCode(true);
       const response = await fetch(
-        `http://rmis-backend.malaysiawest.azurecontainer.io:5050/sendMail/${formData.email}`,
+        `https://www.rmis.space/api/sendMail/${formData.email}`,
         {
           method: "GET",
         },
@@ -347,7 +347,7 @@ export default function SignupCard() {
 
       if (role === "Technician") {
         // endpoint =
-        //   "http://rmis-backend.malaysiawest.azurecontainer.io:5050/auth/technician/register";
+        //   "https://www.rmis.space/api/auth/technician/register";
         // const formDataObj = new FormData();
         // formDataObj.append("firstName", formData.firstName);
         // formDataObj.append("lastName", formData.lastName);
@@ -403,19 +403,16 @@ export default function SignupCard() {
         });
 
         // Send verification email
-        await fetch(
-          `http://rmis-backend.malaysiawest.azurecontainer.io:5050/sendMail/${formData.email}`,
-          {
-            method: "GET",
-          },
-        );
+        await fetch(`https://www.rmis.space/api/sendMail/${formData.email}`, {
+          method: "GET",
+        });
 
         //setIsLoading(false);
         // window.location.href = "/verify-email";
         router.push("/verify-email");
         return;
       } else if (role === "Company") {
-        // endpoint = `http://rmis-backend.malaysiawest.azurecontainer.io:5050/auth/company/register/${verificationCode}`;
+        // endpoint = `https://www.rmis.space/api/auth/company/register/${verificationCode}`;
         // const companyData = {
         //     name: formData.companyName,
         //     email: formData.email,
@@ -437,12 +434,9 @@ export default function SignupCard() {
             role: role,
           }),
         );
-        await fetch(
-          `http://rmis-backend.malaysiawest.azurecontainer.io:5050/sendMail/${formData.email}`,
-          {
-            method: "GET",
-          },
-        );
+        await fetch(`https://www.rmis.space/api/sendMail/${formData.email}`, {
+          method: "GET",
+        });
         setIsLoading(false);
         router.push("/verify-email");
         return;
@@ -461,12 +455,9 @@ export default function SignupCard() {
         );
 
         // Send verification email
-        await fetch(
-          `http://rmis-backend.malaysiawest.azurecontainer.io:5050/sendMail/${formData.email}`,
-          {
-            method: "GET",
-          },
-        );
+        await fetch(`https://www.rmis.space/api/sendMail/${formData.email}`, {
+          method: "GET",
+        });
 
         setIsLoading(false);
         router.push("/verify-email");

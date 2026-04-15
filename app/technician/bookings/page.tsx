@@ -6,8 +6,7 @@ import Link from "next/link";
 import { getToken, getRole } from "@/services/authService";
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL ||
-  "http://rmis-backend.malaysiawest.azurecontainer.io:5050";
+  process.env.NEXT_PUBLIC_API_URL || "https://www.rmis.space/api";
 
 interface Booking {
   id: number;

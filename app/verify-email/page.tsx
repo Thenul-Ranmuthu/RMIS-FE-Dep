@@ -28,12 +28,12 @@ export default function VerifyEmailPage() {
   const getEndpoint = (role: string, code: string): string => {
     switch (role) {
       case "Technician":
-        return `http://rmis-backend.malaysiawest.azurecontainer.io:5050/auth/technician/register/${code}`;
+        return `https://www.rmis.space/api/auth/technician/register/${code}`;
       case "Company":
-        return `http://rmis-backend.malaysiawest.azurecontainer.io:5050/auth/company/register/${code}`;
+        return `https://www.rmis.space/api/auth/company/register/${code}`;
       case "Public User":
       default:
-        return `http://rmis-backend.malaysiawest.azurecontainer.io:5050/auth/user/register/${code}`;
+        return `https://www.rmis.space/api/auth/user/register/${code}`;
     }
   };
 
@@ -163,7 +163,7 @@ export default function VerifyEmailPage() {
 
     try {
       const response = await fetch(
-        `http://rmis-backend.malaysiawest.azurecontainer.io:5050/sendMail/${email}`,
+        `https://www.rmis.space/api/sendMail/${email}`,
         {
           method: "GET",
         },
