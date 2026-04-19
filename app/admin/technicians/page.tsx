@@ -16,7 +16,6 @@ interface Certification {
   fileUrl: string;
   originalFileName: string;
 }
-
 interface Technician {
   id: number;
   firstName: string;
@@ -33,8 +32,46 @@ interface Technician {
   approvalDate: string | null;
   certifications: Certification[];
 }
-
 type TabType = "PENDING" | "ACTIVE" | "REJECTED";
+
+const formatDate = (d: string | null) =>
+  d
+    ? new Date(d).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })
+    : "—";
+
+const SkillBadge = ({ level }: { level: string }) => {
+  const s: Record<string, string> = {
+    JUNIOR: "bg-gray-100 text-gray-700",
+    INTERMEDIATE: "bg-blue-100 text-blue-700",
+    SENIOR: "bg-amber-100 text-amber-700",
+  };
+  return (
+    <span
+      className={`px-2.5 py-1 rounded-full text-xs font-bold ${s[level] ?? "bg-slate-100 text-slate-600"}`}
+    >
+      {level || "—"}
+    </span>
+  );
+};
+
+const StatusBadge = ({ status }: { status: string }) => {
+  const s: Record<string, string> = {
+    PENDING: "bg-amber-100 text-amber-800",
+    ACTIVE: "bg-green-100 text-green-800",
+    REJECTED: "bg-red-100 text-red-800",
+  };
+  return (
+    <span
+      className={`px-2.5 py-1 rounded-full text-xs font-bold ${s[status] ?? "bg-slate-100 text-slate-600"}`}
+    >
+      {status}
+    </span>
+  );
+};
 
 export default function AdminTechnicianPage() {
   const router = useRouter();
@@ -49,8 +86,8 @@ export default function AdminTechnicianPage() {
   const [rejectingId, setRejectingId] = useState<number | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [selectedSkillLevel, setSelectedSkillLevel] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // ── Auth guard ─────────────────────────────────────────────────
   useEffect(() => {
     const token = getToken();
     const role = getRole();
@@ -64,7 +101,6 @@ export default function AdminTechnicianPage() {
     }
   }, []);
 
-  // ── Fetch technicians by status ────────────────────────────────
   useEffect(() => {
     fetchTechnicians();
   }, [activeTab]);
@@ -75,14 +111,11 @@ export default function AdminTechnicianPage() {
       const token = getToken();
       const res = await fetch(
         `${API_BASE}/admin/technicians/${activeTab.toLowerCase()}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
+        { headers: { Authorization: `Bearer ${token}` } },
       );
-      if (!res.ok) throw new Error("Failed to fetch");
+      if (!res.ok) throw new Error("Failed");
       setTechnicians(await res.json());
-    } catch (err) {
-      console.error(err);
+    } catch {
       setTechnicians([]);
     } finally {
       setIsLoading(false);
@@ -101,11 +134,11 @@ export default function AdminTechnicianPage() {
         `${API_BASE}/admin/technicians/${id}/approve?skillLevel=${selectedSkillLevel}`,
         { method: "POST", headers: { Authorization: `Bearer ${token}` } },
       );
-      if (!res.ok) throw new Error("Approval failed");
+      if (!res.ok) throw new Error("Failed");
       setSelectedTechnician(null);
       setSelectedSkillLevel("");
       fetchTechnicians();
-    } catch (err) {
+    } catch {
       alert("Failed to approve technician");
     } finally {
       setActionLoading(false);
@@ -113,11 +146,7 @@ export default function AdminTechnicianPage() {
   };
 
   const handleRejectSubmit = async () => {
-    if (!rejectReason.trim()) {
-      alert("Please enter a rejection reason");
-      return;
-    }
-    if (rejectingId == null) return;
+    if (!rejectReason.trim() || rejectingId == null) return;
     setActionLoading(true);
     try {
       const token = getToken();
@@ -125,7 +154,7 @@ export default function AdminTechnicianPage() {
         `${API_BASE}/admin/technicians/${rejectingId}/reject?reason=${encodeURIComponent(rejectReason)}`,
         { method: "POST", headers: { Authorization: `Bearer ${token}` } },
       );
-      if (!res.ok) throw new Error("Rejection failed");
+      if (!res.ok) throw new Error("Failed");
       setShowRejectModal(false);
       setRejectReason("");
       setRejectingId(null);
@@ -147,7 +176,7 @@ export default function AdminTechnicianPage() {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error("Delete failed");
+      if (!res.ok) throw new Error("Failed");
       setSelectedTechnician(null);
       fetchTechnicians();
     } catch {
@@ -164,941 +193,443 @@ export default function AdminTechnicianPage() {
     router.push("/ministry");
   };
 
-  const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return "—";
-    return new Date(dateStr).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
-
-  const skillLevelBadge = (level: string) => {
-    const styles: Record<string, { bg: string; color: string }> = {
-      JUNIOR: { bg: "#f3f4f6", color: "#374151" },
-      INTERMEDIATE: { bg: "#dbeafe", color: "#1d4ed8" },
-      SENIOR: { bg: "#fef3c7", color: "#d97706" },
-    };
-    const s = styles[level] ?? { bg: "#f1f5f9", color: "#475569" };
-    return (
-      <span
-        style={{
-          backgroundColor: s.bg,
-          color: s.color,
-          padding: "3px 10px",
-          borderRadius: 20,
-          fontSize: 12,
-          fontWeight: 700,
-        }}
-      >
-        {level || "—"}
-      </span>
-    );
-  };
-
-  const statusBadge = (status: string) => {
-    const styles: Record<string, { bg: string; color: string; label: string }> =
-      {
-        PENDING: { bg: "#fef9c3", color: "#854d0e", label: "Pending" },
-        ACTIVE: { bg: "#dcfce7", color: "#166534", label: "Active" },
-        REJECTED: { bg: "#fee2e2", color: "#991b1b", label: "Rejected" },
-      };
-    const s = styles[status] ?? {
-      bg: "#f1f5f9",
-      color: "#475569",
-      label: status,
-    };
-    return (
-      <span
-        style={{
-          backgroundColor: s.bg,
-          color: s.color,
-          padding: "3px 10px",
-          borderRadius: 20,
-          fontSize: 12,
-          fontWeight: 700,
-        }}
-      >
-        {s.label}
-      </span>
-    );
-  };
-
   if (isUnauthorised) return <UnauthorisedMessage />;
 
   return (
-    <div
-      style={{
-        display: "flex",
-        minHeight: "100vh",
-        backgroundColor: "#f8fafc",
-      }}
-    >
-      {/* ── Sidebar ─────────────────────────────────────────────── */}
-      <aside
-        style={{
-          width: 260,
-          backgroundColor: "#0f172a",
-          display: "flex",
-          flexDirection: "column",
-          flexShrink: 0,
-          position: "sticky",
-          top: 0,
-          height: "100vh",
-        }}
-      >
-        {/* Logo */}
+    <div className="flex min-h-screen bg-slate-50">
+      {sidebarOpen && (
         <div
-          style={{
-            padding: "24px 20px",
-            borderBottom: "1px solid rgba(255,255,255,0.08)",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 10,
-                backgroundColor: "rgba(34,197,94,0.15)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 20,
-              }}
-            >
+          className="fixed inset-0 bg-black/50 z-20 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={`fixed lg:sticky top-0 h-screen z-30 lg:z-auto w-64 bg-[#0f172a] flex flex-col flex-shrink-0 transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
+      >
+        <div className="p-5 border-b border-white/10">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-xl flex-shrink-0">
               🛡️
             </div>
             <div>
-              <p
-                style={{
-                  color: "#fff",
-                  fontWeight: 800,
-                  fontSize: 14,
-                  margin: 0,
-                  lineHeight: 1.2,
-                }}
-              >
+              <p className="text-white font-bold text-sm leading-tight">
                 Ministry of Environment
               </p>
-              <p
-                style={{
-                  color: "rgba(255,255,255,0.4)",
-                  fontSize: 11,
-                  margin: 0,
-                  fontWeight: 500,
-                }}
-              >
-                Admin Portal
-              </p>
+              <p className="text-white/40 text-xs">Admin Portal</p>
             </div>
           </div>
         </div>
-
-        {/* Nav */}
-        <nav style={{ flex: 1, padding: "16px 12px" }}>
-          <p
-            style={{
-              color: "rgba(255,255,255,0.3)",
-              fontSize: 10,
-              fontWeight: 700,
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              padding: "8px 8px 4px",
-              margin: 0,
-            }}
-          >
+        <nav className="flex-1 p-3">
+          <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest px-2 py-2">
             Administration
           </p>
-
-          <Link href="/admin/dashboard" style={{ textDecoration: "none" }}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                padding: "10px 12px",
-                borderRadius: 8,
-                color: "rgba(255,255,255,0.55)",
-                fontWeight: 600,
-                fontSize: 14,
-                cursor: "pointer",
-                marginTop: 4,
-              }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.backgroundColor =
-                  "rgba(255,255,255,0.06)")
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.backgroundColor = "transparent")
-              }
+          {[
+            { href: "/admin/dashboard", icon: "📋", label: "Audit Logs" },
+            { href: "/admin/bookings", icon: "📅", label: "Bookings" },
+          ].map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-white/55 hover:bg-white/10 font-semibold text-sm mt-1 transition-colors no-underline"
             >
-              <span>📋</span> Audit Logs
-            </div>
-          </Link>
-
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              padding: "10px 12px",
-              borderRadius: 8,
-              backgroundColor: "rgba(255,255,255,0.08)",
-              color: "#fff",
-              fontWeight: 600,
-              fontSize: 14,
-              cursor: "pointer",
-              marginTop: 4,
-            }}
-          >
-            <span>🔧</span> Technicians
+              <span>{item.icon}</span>
+              {item.label}
+            </Link>
+          ))}
+          <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-white/10 text-white font-semibold text-sm mt-1">
+            <span>🔧</span>Technicians
           </div>
         </nav>
-
-        {/* Logout */}
-        <div
-          style={{
-            padding: "16px 12px",
-            borderTop: "1px solid rgba(255,255,255,0.08)",
-          }}
-        >
+        <div className="p-3 border-t border-white/10">
           <button
             onClick={handleLogout}
-            style={{
-              width: "100%",
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              padding: "10px 12px",
-              borderRadius: 8,
-              backgroundColor: "transparent",
-              border: "none",
-              color: "rgba(255,255,255,0.5)",
-              fontWeight: 600,
-              fontSize: 14,
-              cursor: "pointer",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "rgba(239,68,68,0.15)";
-              e.currentTarget.style.color = "#fca5a5";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "transparent";
-              e.currentTarget.style.color = "rgba(255,255,255,0.5)";
-            }}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-white/50 hover:bg-red-500/20 hover:text-red-300 font-semibold text-sm transition-colors"
           >
-            <span>🚪</span> Logout
+            <span>🚪</span>Logout
           </button>
         </div>
       </aside>
 
-      {/* ── Main Content ───────────────────────────────────────── */}
-      <main style={{ flex: 1, padding: "32px", overflowY: "auto" }}>
-        {/* Page title */}
-        <div style={{ marginBottom: 28 }}>
-          <h1
-            style={{
-              fontSize: 28,
-              fontWeight: 900,
-              color: "#0f172a",
-              margin: 0,
-            }}
+      <main className="flex-1 overflow-y-auto min-w-0">
+        {/* Mobile topbar */}
+        <div className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 px-4 py-3 flex items-center gap-3 lg:hidden">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="p-2 rounded-lg hover:bg-slate-100 transition"
           >
+            <svg
+              className="w-5 h-5 text-slate-700"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
+          <span className="font-bold text-slate-800 text-sm">
             Technician Management
-          </h1>
-          <p style={{ color: "#64748b", fontSize: 14, margin: "4px 0 0" }}>
-            Review, approve, or reject technician registration applications.
-          </p>
+          </span>
         </div>
 
-        {/* Stats cards */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3,1fr)",
-            gap: 16,
-            marginBottom: 28,
-          }}
-        >
-          {[
-            {
-              label: "Pending Review",
-              icon: "⏳",
-              bg: "#fffbeb",
-              border: "#fde68a",
-              iconBg: "#fef3c7",
-              count: activeTab === "PENDING" ? technicians.length : "—",
-              color: "#d97706",
-            },
-            {
-              label: "Active",
-              icon: "✅",
-              bg: "#f0fdf4",
-              border: "#bbf7d0",
-              iconBg: "#dcfce7",
-              count: activeTab === "ACTIVE" ? technicians.length : "—",
-              color: "#16a34a",
-            },
-            {
-              label: "Rejected",
-              icon: "❌",
-              bg: "#fff1f2",
-              border: "#fecdd3",
-              iconBg: "#fee2e2",
-              count: activeTab === "REJECTED" ? technicians.length : "—",
-              color: "#dc2626",
-            },
-          ].map((card) => (
-            <div
-              key={card.label}
-              style={{
-                backgroundColor: card.bg,
-                borderRadius: 12,
-                border: `1px solid ${card.border}`,
-                padding: "16px 20px",
-                display: "flex",
-                alignItems: "center",
-                gap: 14,
-              }}
-            >
+        <div className="p-4 sm:p-6 lg:p-8">
+          <div className="mb-6 hidden lg:block">
+            <h1 className="text-2xl font-black text-slate-900">
+              Technician Management
+            </h1>
+            <p className="text-slate-500 text-sm mt-1">
+              Review, approve, or reject technician registration applications.
+            </p>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-3 mb-6">
+            {[
+              {
+                label: "Pending Review",
+                icon: "⏳",
+                count: activeTab === "PENDING" ? technicians.length : "—",
+                bg: "bg-amber-50 border-amber-200",
+                lc: "text-amber-600",
+              },
+              {
+                label: "Active",
+                icon: "✅",
+                count: activeTab === "ACTIVE" ? technicians.length : "—",
+                bg: "bg-green-50 border-green-200",
+                lc: "text-green-600",
+              },
+              {
+                label: "Rejected",
+                icon: "❌",
+                count: activeTab === "REJECTED" ? technicians.length : "—",
+                bg: "bg-red-50 border-red-200",
+                lc: "text-red-500",
+              },
+            ].map((card) => (
               <div
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: "50%",
-                  backgroundColor: card.iconBg,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: 20,
-                  flexShrink: 0,
+                key={card.label}
+                className={`${card.bg} border rounded-xl p-3 sm:p-4 flex items-center gap-2 sm:gap-3`}
+              >
+                <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white/60 flex items-center justify-center text-base sm:text-xl flex-shrink-0">
+                  {card.icon}
+                </div>
+                <div>
+                  <p
+                    className={`text-[10px] sm:text-xs font-bold uppercase tracking-wide ${card.lc}`}
+                  >
+                    {card.label}
+                  </p>
+                  <p className="text-lg sm:text-2xl font-black text-slate-900">
+                    {isLoading ? "—" : card.count}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Tab bar */}
+          <div className="flex gap-1 bg-white border border-slate-200 rounded-xl p-1 mb-5 w-fit">
+            {(["PENDING", "ACTIVE", "REJECTED"] as TabType[]).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => {
+                  setActiveTab(tab);
+                  setSelectedTechnician(null);
+                  setSelectedSkillLevel("");
                 }}
+                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === tab ? "bg-slate-900 text-white" : "text-slate-500 hover:text-slate-700"}`}
               >
-                {card.icon}
-              </div>
-              <div>
-                <p
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: card.color,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
-                    margin: 0,
-                  }}
-                >
-                  {card.label}
-                </p>
-                <p
-                  style={{
-                    fontSize: 24,
-                    fontWeight: 900,
-                    color: "#0f172a",
-                    margin: 0,
-                  }}
-                >
-                  {isLoading ? "—" : card.count}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
+                {tab.charAt(0) + tab.slice(1).toLowerCase()}
+              </button>
+            ))}
+          </div>
 
-        {/* Tab bar */}
-        <div
-          style={{
-            display: "flex",
-            gap: 4,
-            backgroundColor: "#fff",
-            borderRadius: 10,
-            border: "1px solid #e2e8f0",
-            padding: 4,
-            marginBottom: 20,
-            width: "fit-content",
-          }}
-        >
-          {(["PENDING", "ACTIVE", "REJECTED"] as TabType[]).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => {
-                setActiveTab(tab);
-                setSelectedTechnician(null);
-                setSelectedSkillLevel("");
-              }}
-              style={{
-                padding: "8px 20px",
-                borderRadius: 7,
-                border: "none",
-                cursor: "pointer",
-                fontWeight: 700,
-                fontSize: 13,
-                transition: "all 0.15s",
-                backgroundColor: activeTab === tab ? "#0f172a" : "transparent",
-                color: activeTab === tab ? "#fff" : "#64748b",
-              }}
-            >
-              {tab.charAt(0) + tab.slice(1).toLowerCase()}
-            </button>
-          ))}
-        </div>
-
-        {/* Table + detail panel */}
-        <div style={{ display: "flex", gap: 20 }}>
-          {/* Table */}
-          <div
-            style={{
-              flex: 1,
-              backgroundColor: "#fff",
-              borderRadius: 12,
-              border: "1px solid #e2e8f0",
-              overflow: "hidden",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-            }}
-          >
-            {isLoading ? (
-              <div
-                style={{ padding: 40, textAlign: "center", color: "#94a3b8" }}
-              >
-                <div style={{ fontSize: 32, marginBottom: 8 }}>⏳</div>
-                Loading technicians...
-              </div>
-            ) : technicians.length === 0 ? (
-              <div
-                style={{ padding: 40, textAlign: "center", color: "#94a3b8" }}
-              >
-                <div style={{ fontSize: 32, marginBottom: 8 }}>📭</div>
-                No {activeTab.toLowerCase()} technicians found.
-              </div>
-            ) : (
-              <table
-                style={{
-                  width: "100%",
-                  borderCollapse: "collapse",
-                  textAlign: "left",
-                }}
-              >
-                <thead>
-                  <tr style={{ borderBottom: "1px solid #f1f5f9" }}>
-                    {[
-                      "Name",
-                      "Email",
-                      "Specialization",
-                      "Skill Level",
-                      "Registered",
-                      "Status",
-                      "",
-                    ].map((h) => (
-                      <th
-                        key={h}
-                        style={{
-                          padding: "12px 16px",
-                          fontSize: 11,
-                          fontWeight: 700,
-                          color: "#94a3b8",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.05em",
-                        }}
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {technicians.map((t) => (
-                    <tr
-                      key={t.id}
-                      onClick={() => {
-                        setSelectedTechnician(t);
-                        setSelectedSkillLevel("");
-                      }}
-                      style={{
-                        borderBottom: "1px solid #f8fafc",
-                        cursor: "pointer",
-                        backgroundColor:
-                          selectedTechnician?.id === t.id
-                            ? "#f0fdf4"
-                            : "transparent",
-                        transition: "background-color 0.15s",
-                      }}
-                      onMouseEnter={(e) => {
-                        if (selectedTechnician?.id !== t.id)
-                          e.currentTarget.style.backgroundColor = "#f8fafc";
-                      }}
-                      onMouseLeave={(e) => {
-                        if (selectedTechnician?.id !== t.id)
-                          e.currentTarget.style.backgroundColor = "transparent";
-                      }}
-                    >
-                      <td
-                        style={{
-                          padding: "13px 16px",
-                          fontWeight: 600,
-                          fontSize: 14,
-                          color: "#0f172a",
-                        }}
-                      >
-                        {t.firstName} {t.lastName}
-                      </td>
-                      <td
-                        style={{
-                          padding: "13px 16px",
-                          fontSize: 13,
-                          color: "#64748b",
-                        }}
-                      >
-                        {t.email}
-                      </td>
-                      <td
-                        style={{
-                          padding: "13px 16px",
-                          fontSize: 13,
-                          color: "#64748b",
-                        }}
-                      >
-                        {t.specialization || "—"}
-                      </td>
-                      <td style={{ padding: "13px 16px" }}>
-                        {t.skillLevel ? (
-                          skillLevelBadge(t.skillLevel)
-                        ) : (
-                          <span style={{ color: "#94a3b8", fontSize: 13 }}>
-                            —
-                          </span>
-                        )}
-                      </td>
-                      <td
-                        style={{
-                          padding: "13px 16px",
-                          fontSize: 13,
-                          color: "#64748b",
-                        }}
-                      >
-                        {formatDate(t.registrationDate)}
-                      </td>
-                      <td style={{ padding: "13px 16px" }}>
-                        {statusBadge(t.status)}
-                      </td>
-                      <td style={{ padding: "13px 16px" }}>
-                        <span
-                          style={{
-                            color: "#1a4a38",
-                            fontSize: 13,
-                            fontWeight: 700,
-                            cursor: "pointer",
+          {/* Table + detail */}
+          <div className="flex flex-col xl:flex-row gap-4 items-start">
+            <div className="flex-1 bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm min-w-0">
+              {isLoading ? (
+                <div className="p-12 text-center text-slate-400">
+                  <div className="text-3xl mb-2">⏳</div>Loading technicians...
+                </div>
+              ) : technicians.length === 0 ? (
+                <div className="p-12 text-center text-slate-400">
+                  <div className="text-3xl mb-2">📭</div>No{" "}
+                  {activeTab.toLowerCase()} technicians found.
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table
+                    className="w-full text-left"
+                    style={{ borderCollapse: "collapse" }}
+                  >
+                    <thead>
+                      <tr className="border-b border-slate-100">
+                        {[
+                          "Name",
+                          "Email",
+                          "Specialization",
+                          "Skill Level",
+                          "Registered",
+                          "Status",
+                          "",
+                        ].map((h) => (
+                          <th
+                            key={h}
+                            className="px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wide whitespace-nowrap"
+                          >
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {technicians.map((t) => (
+                        <tr
+                          key={t.id}
+                          onClick={() => {
+                            setSelectedTechnician(t);
+                            setSelectedSkillLevel("");
                           }}
+                          className={`border-b border-slate-50 cursor-pointer hover:bg-slate-50 transition-colors ${selectedTechnician?.id === t.id ? "bg-green-50" : ""}`}
                         >
-                          View →
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                          <td className="px-4 py-3 text-sm font-semibold text-slate-900 whitespace-nowrap">
+                            {t.firstName} {t.lastName}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-slate-500">
+                            {t.email}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-slate-500">
+                            {t.specialization || "—"}
+                          </td>
+                          <td className="px-4 py-3">
+                            {t.skillLevel ? (
+                              <SkillBadge level={t.skillLevel} />
+                            ) : (
+                              <span className="text-slate-400 text-sm">—</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-slate-500 whitespace-nowrap">
+                            {formatDate(t.registrationDate)}
+                          </td>
+                          <td className="px-4 py-3">
+                            <StatusBadge status={t.status} />
+                          </td>
+                          <td className="px-4 py-3 text-emerald-700 text-sm font-bold whitespace-nowrap">
+                            View →
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Detail panel */}
+            {selectedTechnician && (
+              <div className="w-full xl:w-80 xl:flex-shrink-0 bg-white rounded-xl border border-slate-200 p-5 shadow-sm xl:sticky xl:top-5">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="text-base font-black text-slate-900">
+                      {selectedTechnician.firstName}{" "}
+                      {selectedTechnician.lastName}
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      ID #{selectedTechnician.id}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setSelectedTechnician(null);
+                      setSelectedSkillLevel("");
+                    }}
+                    className="text-slate-400 hover:text-slate-600 text-lg leading-none"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {[
+                  { label: "Email", value: selectedTechnician.email },
+                  { label: "Phone", value: selectedTechnician.phoneNumber },
+                  {
+                    label: "District",
+                    value: selectedTechnician.district || "—",
+                  },
+                  {
+                    label: "Address",
+                    value: selectedTechnician.address || "—",
+                  },
+                  {
+                    label: "Specialization",
+                    value: selectedTechnician.specialization || "—",
+                  },
+                  {
+                    label: "Experience",
+                    value:
+                      selectedTechnician.yearsOfExperience != null
+                        ? `${selectedTechnician.yearsOfExperience} yrs`
+                        : "—",
+                  },
+                  {
+                    label: "Registered",
+                    value: formatDate(selectedTechnician.registrationDate),
+                  },
+                  {
+                    label: "Approved",
+                    value: formatDate(selectedTechnician.approvalDate),
+                  },
+                ].map((row) => (
+                  <div key={row.label} className="mb-3">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">
+                      {row.label}
+                    </p>
+                    <p className="text-sm font-semibold text-slate-900 mt-0.5 break-words">
+                      {row.value}
+                    </p>
+                  </div>
+                ))}
+
+                <div className="mb-3">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">
+                    Skill Level
+                  </p>
+                  {selectedTechnician.skillLevel ? (
+                    <SkillBadge level={selectedTechnician.skillLevel} />
+                  ) : (
+                    <span className="text-sm text-slate-400">
+                      Not assigned yet
+                    </span>
+                  )}
+                </div>
+                <div className="mb-4">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">
+                    Status
+                  </p>
+                  <StatusBadge status={selectedTechnician.status} />
+                </div>
+
+                {selectedTechnician.certifications?.length > 0 && (
+                  <div className="mb-5">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-2">
+                      Certifications ({selectedTechnician.certifications.length}
+                      )
+                    </p>
+                    <div className="flex flex-col gap-2">
+                      {selectedTechnician.certifications.map((cert) => (
+                        <a
+                          key={cert.id}
+                          href={`${API_BASE}${cert.fileUrl}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-2 p-2.5 rounded-lg bg-slate-50 border border-slate-200 hover:bg-green-50 transition-colors no-underline"
+                        >
+                          <span>📄</span>
+                          <div>
+                            <p className="text-xs font-bold text-slate-900">
+                              {cert.certificationName}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {cert.originalFileName}
+                            </p>
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-2">
+                  {selectedTechnician.status === "PENDING" && (
+                    <>
+                      <div className="mb-1">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">
+                          Assign Skill Level{" "}
+                          <span className="text-red-500">*</span>
+                        </p>
+                        <select
+                          value={selectedSkillLevel}
+                          onChange={(e) =>
+                            setSelectedSkillLevel(e.target.value)
+                          }
+                          className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm font-semibold text-slate-900 bg-slate-50 outline-none focus:ring-2 focus:ring-emerald-500"
+                        >
+                          <option value="">Select level…</option>
+                          <option value="JUNIOR">Junior</option>
+                          <option value="INTERMEDIATE">Intermediate</option>
+                          <option value="SENIOR">Senior</option>
+                        </select>
+                      </div>
+                      <button
+                        onClick={() => handleApprove(selectedTechnician.id)}
+                        disabled={actionLoading || !selectedSkillLevel}
+                        className="w-full py-2.5 rounded-lg bg-green-600 hover:bg-green-700 text-white font-bold text-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {actionLoading
+                          ? "Approving..."
+                          : "✅ Approve Technician"}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setRejectingId(selectedTechnician.id);
+                          setShowRejectModal(true);
+                        }}
+                        disabled={actionLoading}
+                        className="w-full py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition disabled:opacity-50"
+                      >
+                        ❌ Reject Technician
+                      </button>
+                    </>
+                  )}
+                  <button
+                    onClick={() => handleDelete(selectedTechnician.id)}
+                    disabled={actionLoading}
+                    className="w-full py-2.5 rounded-lg border border-slate-200 bg-white text-red-500 font-bold text-sm hover:bg-red-50 transition disabled:opacity-50"
+                  >
+                    🗑 Delete Technician
+                  </button>
+                </div>
+              </div>
             )}
           </div>
 
-          {/* Detail panel */}
-          {selectedTechnician && (
-            <div
-              style={{
-                width: 340,
-                flexShrink: 0,
-                backgroundColor: "#fff",
-                borderRadius: 12,
-                border: "1px solid #e2e8f0",
-                padding: 24,
-                boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-                alignSelf: "flex-start",
-                position: "sticky",
-                top: 20,
-              }}
-            >
-              {/* Header */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                  marginBottom: 20,
-                }}
+          <footer className="mt-10 pt-5 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-3">
+            <p className="text-slate-400 text-xs">
+              © 2024 Ministry of Environment. All Rights Reserved.
+            </p>
+            <div className="flex gap-4">
+              <Link
+                href="#"
+                className="text-slate-400 text-xs hover:text-slate-600 transition"
               >
-                <div>
-                  <h3
-                    style={{
-                      fontSize: 17,
-                      fontWeight: 800,
-                      color: "#0f172a",
-                      margin: 0,
-                    }}
-                  >
-                    {selectedTechnician.firstName} {selectedTechnician.lastName}
-                  </h3>
-                  <p
-                    style={{
-                      fontSize: 12,
-                      color: "#64748b",
-                      margin: "3px 0 0",
-                    }}
-                  >
-                    ID #{selectedTechnician.id}
-                  </p>
-                </div>
-                <button
-                  onClick={() => {
-                    setSelectedTechnician(null);
-                    setSelectedSkillLevel("");
-                  }}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    color: "#94a3b8",
-                    fontSize: 18,
-                    lineHeight: 1,
-                  }}
-                >
-                  ✕
-                </button>
-              </div>
-
-              {/* Info rows */}
-              {[
-                { label: "Email", value: selectedTechnician.email },
-                { label: "Phone", value: selectedTechnician.phoneNumber },
-                {
-                  label: "District",
-                  value: selectedTechnician.district || "—",
-                },
-                { label: "Address", value: selectedTechnician.address || "—" },
-                {
-                  label: "Specialization",
-                  value: selectedTechnician.specialization || "—",
-                },
-                {
-                  label: "Experience",
-                  value:
-                    selectedTechnician.yearsOfExperience != null
-                      ? `${selectedTechnician.yearsOfExperience} yrs`
-                      : "—",
-                },
-                {
-                  label: "Registered",
-                  value: formatDate(selectedTechnician.registrationDate),
-                },
-                {
-                  label: "Approved",
-                  value: formatDate(selectedTechnician.approvalDate),
-                },
-              ].map((row) => (
-                <div key={row.label} style={{ marginBottom: 12 }}>
-                  <p
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      color: "#94a3b8",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.04em",
-                      margin: 0,
-                    }}
-                  >
-                    {row.label}
-                  </p>
-                  <p
-                    style={{
-                      fontSize: 13,
-                      fontWeight: 600,
-                      color: "#0f172a",
-                      margin: "2px 0 0",
-                      wordBreak: "break-word",
-                    }}
-                  >
-                    {row.value}
-                  </p>
-                </div>
-              ))}
-
-              {/* Skill Level */}
-              <div style={{ marginBottom: 12 }}>
-                <p
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: "#94a3b8",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.04em",
-                    margin: "0 0 4px",
-                  }}
-                >
-                  Skill Level
-                </p>
-                {selectedTechnician.skillLevel ? (
-                  skillLevelBadge(selectedTechnician.skillLevel)
-                ) : (
-                  <span style={{ fontSize: 13, color: "#94a3b8" }}>
-                    Not assigned yet
-                  </span>
-                )}
-              </div>
-
-              {/* Status */}
-              <div style={{ marginBottom: 16 }}>
-                <p
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: "#94a3b8",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.04em",
-                    margin: "0 0 4px",
-                  }}
-                >
-                  Status
-                </p>
-                {statusBadge(selectedTechnician.status)}
-              </div>
-
-              {/* Certifications */}
-              {selectedTechnician.certifications?.length > 0 && (
-                <div style={{ marginBottom: 20 }}>
-                  <p
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      color: "#94a3b8",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.04em",
-                      margin: "0 0 8px",
-                    }}
-                  >
-                    Certifications ({selectedTechnician.certifications.length})
-                  </p>
-                  <div
-                    style={{ display: "flex", flexDirection: "column", gap: 6 }}
-                  >
-                    {selectedTechnician.certifications.map((cert) => (
-                      <a
-                        key={cert.id}
-                        href={`${API_BASE}${cert.fileUrl}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                          padding: "8px 10px",
-                          borderRadius: 7,
-                          backgroundColor: "#f8fafc",
-                          border: "1px solid #e2e8f0",
-                          textDecoration: "none",
-                          transition: "background 0.15s",
-                        }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.backgroundColor = "#f0fdf4")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.backgroundColor = "#f8fafc")
-                        }
-                      >
-                        <span style={{ fontSize: 16 }}>📄</span>
-                        <div>
-                          <p
-                            style={{
-                              fontSize: 12,
-                              fontWeight: 700,
-                              color: "#0f172a",
-                              margin: 0,
-                            }}
-                          >
-                            {cert.certificationName}
-                          </p>
-                          <p
-                            style={{
-                              fontSize: 11,
-                              color: "#64748b",
-                              margin: 0,
-                            }}
-                          >
-                            {cert.originalFileName}
-                          </p>
-                        </div>
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Action buttons */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {selectedTechnician.status === "PENDING" && (
-                  <>
-                    {/* Skill level selector */}
-                    <div style={{ marginBottom: 4 }}>
-                      <p
-                        style={{
-                          fontSize: 11,
-                          fontWeight: 700,
-                          color: "#94a3b8",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.04em",
-                          margin: "0 0 6px",
-                        }}
-                      >
-                        Assign Skill Level{" "}
-                        <span style={{ color: "#dc2626" }}>*</span>
-                      </p>
-                      <select
-                        value={selectedSkillLevel}
-                        onChange={(e) => setSelectedSkillLevel(e.target.value)}
-                        style={{
-                          width: "100%",
-                          padding: "9px 10px",
-                          borderRadius: 8,
-                          border: "1px solid #e2e8f0",
-                          fontSize: 13,
-                          fontWeight: 600,
-                          color: "#0f172a",
-                          background: "#f8fafc",
-                          cursor: "pointer",
-                        }}
-                      >
-                        <option value="">Select level…</option>
-                        <option value="JUNIOR">Junior</option>
-                        <option value="INTERMEDIATE">Intermediate</option>
-                        <option value="SENIOR">Senior</option>
-                      </select>
-                    </div>
-
-                    <button
-                      onClick={() => handleApprove(selectedTechnician.id)}
-                      disabled={actionLoading || !selectedSkillLevel}
-                      style={{
-                        width: "100%",
-                        padding: "11px 0",
-                        borderRadius: 8,
-                        border: "none",
-                        backgroundColor: "#16a34a",
-                        color: "#fff",
-                        fontWeight: 700,
-                        fontSize: 14,
-                        cursor: selectedSkillLevel ? "pointer" : "not-allowed",
-                        opacity: actionLoading || !selectedSkillLevel ? 0.5 : 1,
-                        transition: "opacity 0.15s",
-                      }}
-                    >
-                      {actionLoading ? "Approving..." : "✅ Approve Technician"}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setRejectingId(selectedTechnician.id);
-                        setShowRejectModal(true);
-                      }}
-                      disabled={actionLoading}
-                      style={{
-                        width: "100%",
-                        padding: "11px 0",
-                        borderRadius: 8,
-                        border: "none",
-                        backgroundColor: "#dc2626",
-                        color: "#fff",
-                        fontWeight: 700,
-                        fontSize: 14,
-                        cursor: "pointer",
-                        opacity: actionLoading ? 0.6 : 1,
-                      }}
-                    >
-                      ❌ Reject Technician
-                    </button>
-                  </>
-                )}
-                <button
-                  onClick={() => handleDelete(selectedTechnician.id)}
-                  disabled={actionLoading}
-                  style={{
-                    width: "100%",
-                    padding: "11px 0",
-                    borderRadius: 8,
-                    border: "1px solid #e2e8f0",
-                    backgroundColor: "#fff",
-                    color: "#ef4444",
-                    fontWeight: 700,
-                    fontSize: 14,
-                    cursor: "pointer",
-                    opacity: actionLoading ? 0.6 : 1,
-                  }}
-                >
-                  🗑 Delete Technician
-                </button>
-              </div>
+                Privacy Policy
+              </Link>
+              <Link
+                href="#"
+                className="text-slate-400 text-xs hover:text-slate-600 transition"
+              >
+                Help Center
+              </Link>
             </div>
-          )}
+          </footer>
         </div>
-
-        {/* Footer */}
-        <footer
-          style={{
-            marginTop: 40,
-            paddingTop: 20,
-            borderTop: "1px solid #e2e8f0",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <p style={{ color: "#94a3b8", fontSize: 13, margin: 0 }}>
-            © 2024 Ministry of Environment. All Rights Reserved.
-          </p>
-          <div style={{ display: "flex", gap: 20 }}>
-            <Link
-              href="#"
-              style={{ color: "#94a3b8", fontSize: 13, textDecoration: "none" }}
-            >
-              Privacy Policy
-            </Link>
-            <Link
-              href="#"
-              style={{ color: "#94a3b8", fontSize: 13, textDecoration: "none" }}
-            >
-              Help Center
-            </Link>
-          </div>
-        </footer>
       </main>
 
-      {/* ── Reject reason modal ────────────────────────────────── */}
+      {/* Reject modal */}
       {showRejectModal && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            backgroundColor: "rgba(0,0,0,0.4)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 50,
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: "#fff",
-              borderRadius: 16,
-              padding: 32,
-              width: 440,
-              boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
-            }}
-          >
-            <h3
-              style={{
-                fontSize: 18,
-                fontWeight: 800,
-                color: "#0f172a",
-                margin: "0 0 8px",
-              }}
-            >
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 sm:p-8 w-full max-w-md shadow-2xl">
+            <h3 className="text-lg font-black text-slate-900 mb-2">
               Reject Technician
             </h3>
-            <p style={{ fontSize: 14, color: "#64748b", margin: "0 0 20px" }}>
+            <p className="text-sm text-slate-500 mb-4">
               Please provide a reason for rejection. This will be recorded.
             </p>
             <textarea
@@ -1106,55 +637,23 @@ export default function AdminTechnicianPage() {
               onChange={(e) => setRejectReason(e.target.value)}
               placeholder="Enter rejection reason..."
               rows={4}
-              style={{
-                width: "100%",
-                borderRadius: 8,
-                border: "1px solid #e2e8f0",
-                padding: "10px 12px",
-                fontSize: 14,
-                resize: "vertical",
-                outline: "none",
-                fontFamily: "inherit",
-                marginBottom: 16,
-                boxSizing: "border-box",
-              }}
+              className="w-full rounded-lg border border-slate-200 p-3 text-sm resize-vertical outline-none focus:ring-2 focus:ring-red-400 mb-4"
             />
-            <div
-              style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}
-            >
+            <div className="flex gap-3 justify-end">
               <button
                 onClick={() => {
                   setShowRejectModal(false);
                   setRejectReason("");
                   setRejectingId(null);
                 }}
-                style={{
-                  padding: "10px 20px",
-                  borderRadius: 8,
-                  border: "1px solid #e2e8f0",
-                  backgroundColor: "#fff",
-                  color: "#374151",
-                  fontWeight: 600,
-                  fontSize: 14,
-                  cursor: "pointer",
-                }}
+                className="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 font-semibold text-sm hover:bg-slate-50 transition"
               >
                 Cancel
               </button>
               <button
                 onClick={handleRejectSubmit}
                 disabled={actionLoading || !rejectReason.trim()}
-                style={{
-                  padding: "10px 20px",
-                  borderRadius: 8,
-                  border: "none",
-                  backgroundColor: "#dc2626",
-                  color: "#fff",
-                  fontWeight: 700,
-                  fontSize: 14,
-                  cursor: "pointer",
-                  opacity: actionLoading || !rejectReason.trim() ? 0.6 : 1,
-                }}
+                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-sm transition disabled:opacity-50"
               >
                 {actionLoading ? "Rejecting..." : "Confirm Rejection"}
               </button>

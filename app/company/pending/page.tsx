@@ -50,7 +50,7 @@ export default function CompanyPendingPage() {
     >
       <div className="absolute inset-0 bg-black/50" />
 
-      <div className="relative bg-white/95 backdrop-blur-sm p-10 rounded-2xl shadow-2xl max-w-lg w-full text-center">
+      <div className="relative bg-white/95 backdrop-blur-sm p-6 sm:p-10 rounded-2xl shadow-2xl max-w-lg w-full text-center">
         {/* Icon */}
         <div className="flex justify-center mb-6">
           <div

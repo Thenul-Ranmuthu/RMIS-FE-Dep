@@ -82,7 +82,7 @@ export default function MinistryRegisterCard() {
     };
 
     return (
-        <div className="bg-white rounded-3xl shadow-2xl w-[460px] p-10">
+        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-[460px] p-6 sm:p-10">
             {/* Header */}
             <div className="flex items-center gap-3 mb-6">
                 <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-emerald-50">

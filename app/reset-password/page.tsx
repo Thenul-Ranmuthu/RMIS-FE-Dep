@@ -627,7 +627,7 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <div className="relative min-h-screen w-screen overflow-hidden flex items-center justify-center">
+    <div className="relative min-h-screen w-full flex items-center justify-center px-4">
       {/* Background */}
       <div
         className="absolute inset-0"
@@ -641,7 +641,7 @@ export default function ResetPasswordPage() {
       <div className="absolute inset-0 bg-black/50" />
 
       {/* Card */}
-      <div className="relative z-10 bg-white rounded-3xl shadow-2xl w-full max-w-md mx-4 p-10">
+      <div className="relative z-10 bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 sm:p-10">
         <Suspense
           fallback={
             <div className="flex justify-center py-10">

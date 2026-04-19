@@ -281,7 +281,7 @@ export default function TechnicianAvailabilityPage() {
   if (isUnauthorised) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
-        <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm max-w-md w-full">
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-10 text-center shadow-sm max-w-md w-full">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-2xl">
             🔒
           </div>

@@ -48,6 +48,7 @@ function QuotaRequestsContent() {
 
     // ── Component state ────────────────────────────────────────────────────
     const [activeTab, setActiveTab] = useState("quota_requests");
+    const [sidebarOpen, setSidebarOpen] = useState(false);
     const [data, setData] = useState<QuotaPaginatedResponse | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -195,6 +196,27 @@ function QuotaRequestsContent() {
                 backgroundRepeat: "no-repeat",
             }}
         >
+            {/* ── Mobile overlay ────────────────────────────────────────── */}
+            {sidebarOpen && (
+                <div
+                    className="fixed inset-0 bg-black/50 z-30 md:hidden"
+                    onClick={() => setSidebarOpen(false)}
+                />
+            )}
+
+            {/* ── Mobile topbar ─────────────────────────────────────────── */}
+            <div className="mobile-topbar fixed top-0 left-0 right-0 z-20 bg-[rgba(10,40,20,0.95)] backdrop-blur-md border-b border-white/10 px-4 py-3 flex items-center gap-3 md:hidden">
+                <button
+                    onClick={() => setSidebarOpen(true)}
+                    className="p-2 rounded-lg text-white hover:bg-white/10 transition"
+                >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+                <span className="text-white font-bold text-sm">Quota Requests</span>
+            </div>
+
             {/* ── Review Modal (RMIS-27) ─────────────────────────────────── */}
             {modalOpen && selectedId && (
                 <QuotaReviewModal
@@ -205,7 +227,7 @@ function QuotaRequestsContent() {
             )}
 
             {/* ── Sidebar ───────────────────────────────────────────────── */}
-            <aside className="sidebar">
+            <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
                 <div className="sidebar-header">
                     <div className="logo-icon">
                         <RefreshCw size={24} color="#2ecc71" />
@@ -271,7 +293,9 @@ function QuotaRequestsContent() {
             </aside>
 
             {/* ── Main Content ──────────────────────────────────────────── */}
-            <main className="main-content">
+            <main className="main-content" style={{ paddingTop: undefined }}>
+                <div style={{ height: 0 }} className="block md:hidden" aria-hidden />
+                <style>{`@media (max-width: 768px) { .main-content { padding-top: 60px !important; } }`}</style>
                 <div className="page-header">
                     <h2>Quota Requests Management</h2>
                     <p>Review, approve, or reject industrial environmental quota applications.</p>

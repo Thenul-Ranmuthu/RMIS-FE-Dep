@@ -179,8 +179,8 @@ export default function VerifyEmailPage() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gray-100 p-8">
-      <div className="bg-white rounded-3xl shadow-2xl w-[420px] p-10">
+    <main className="min-h-screen flex items-center justify-center bg-gray-100 p-4 sm:p-8">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-[420px] p-6 sm:p-10">
         {/* Icon */}
         <div className="flex justify-center mb-4">
           <div className="bg-emerald-100 rounded-full p-4">

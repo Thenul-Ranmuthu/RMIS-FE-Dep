@@ -210,7 +210,7 @@ export default function BookTechnicianPage() {
   if (successTicket) {
     return (
       <main className="min-h-screen bg-[#0f172a] flex items-center justify-center p-6 font-['Public_Sans']">
-        <div className="bg-[#111827] p-10 rounded-[40px] shadow-2xl border border-emerald-500/20 max-w-xl w-full text-center relative overflow-hidden group">
+        <div className="bg-[#111827] p-6 sm:p-10 rounded-[40px] shadow-2xl border border-emerald-500/20 max-w-xl w-full text-center relative overflow-hidden group">
           <div className="absolute top-0 left-0 w-full h-2 bg-emerald-600 shadow-[0_0_20px_rgba(5,150,105,0.4)]" />
 
           <div className="mb-8 flex justify-center">
@@ -582,7 +582,7 @@ const pageStyles = `
     gap: 32px;
     max-width: 1100px;
     margin: 40px auto;
-    padding: 0 32px 80px;
+    padding: 0 16px 60px;
     position: relative;
     z-index: 10;
   }
@@ -618,7 +618,7 @@ const pageStyles = `
   }
 
   .tech-pane {
-    padding: 40px 24px;
+    padding: 24px 16px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -774,13 +774,13 @@ const pageStyles = `
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 32px 20px;
+    padding: 20px 16px;
   }
   .success-card {
     background: #111827;
     border: 1px solid rgba(52, 211, 153, 0.25);
     border-radius: 20px;
-    padding: 44px 40px;
+    padding: 24px 20px;
     text-align: center;
     max-width: 440px;
     width: 100%;
@@ -861,7 +861,7 @@ const pageStyles = `
     background: #111827;
     border: 1px solid rgba(248, 113, 113, 0.2);
     border-radius: 16px;
-    padding: 32px 28px;
+    padding: 20px 16px;
     text-align: center;
     max-width: 360px;
   }
@@ -887,8 +887,11 @@ const pageStyles = `
       padding: 0 16px 40px;
       margin-top: 20px;
     }
-    .tech-pane { position: static; }
-    .form-pane { padding: 24px 20px; }
+    .tech-pane { position: static; padding: 24px 16px; }
+    .form-pane { padding: 20px 16px; }
     .book-topbar { padding: 12px 16px; }
+    .tech-hero { padding: 28px 16px; }
+    .slots-panel { padding: 20px 16px; }
+    .confirm-box { padding: 24px 16px; }
   }
 `;

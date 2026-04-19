@@ -4,7 +4,7 @@ import SignupCard from "../../components/SignupCard";
 
 export default function SignupPage() {
     return (
-        <div className="relative h-screen w-screen overflow-hidden">
+        <div className="relative min-h-screen w-screen overflow-x-hidden">
             {/* Background Image */}
             <div
                 className="absolute inset-0"
@@ -20,7 +20,7 @@ export default function SignupPage() {
             <div className="absolute inset-0 bg-black/40" />
 
             {/* Content - Centered */}
-            <div className="relative h-full w-full flex items-center justify-center px-10 py-16 max-w-7xl mx-auto">
+            <div className="relative min-h-screen w-full flex items-center justify-center px-4 sm:px-8 py-10">
                 <SignupCard />
             </div>
         </div>

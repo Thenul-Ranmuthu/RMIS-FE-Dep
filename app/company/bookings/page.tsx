@@ -121,7 +121,7 @@ export default function CompanyBookingsPage() {
   return (
     <div style={{ minHeight: "100vh", background: "#0f172a", fontFamily: "system-ui, sans-serif", color: "#f8fafc" }}>
       {/* ── Topbar ─────────────────────────────────────────── */}
-      <div style={{ background: "#111827", borderBottom: "1px solid rgba(4,120,87,0.2)", padding: "14px 32px", display: "flex", alignItems: "center", gap: 14 }}>
+      <div style={{ background: "#111827", borderBottom: "1px solid rgba(4,120,87,0.2)", padding: "12px 16px", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <button
           onClick={() => router.push("/company/dashboard")}
           style={{ display: "flex", alignItems: "center", gap: 6, background: "transparent", border: "1px solid rgba(255,255,255,0.12)", color: "#94a3b8", borderRadius: 8, padding: "7px 14px", fontSize: 13, cursor: "pointer" }}
@@ -145,7 +145,7 @@ export default function CompanyBookingsPage() {
       </div>
 
       {/* ── Content ─────────────────────────────────────────── */}
-      <div style={{ maxWidth: 860, margin: "32px auto", padding: "0 20px 60px" }}>
+      <div style={{ maxWidth: 860, margin: "24px auto", padding: "0 16px 60px" }}>
         {error && (
           <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", color: "#fca5a5", borderRadius: 10, padding: "14px 18px", marginBottom: 20 }}>
             {error}

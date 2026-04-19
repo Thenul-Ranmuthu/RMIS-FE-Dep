@@ -1324,7 +1324,7 @@ export default function SignupCard() {
   };
 
   return (
-    <div className="bg-white rounded-3xl shadow-2xl w-[550px] p-10 py-8">
+    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-[550px] p-6 sm:p-10 sm:py-8">
       {renderHeader()}
 
       <div className="flex bg-gray-100 rounded-xl p-1 mb-6 gap-1">

@@ -241,7 +241,7 @@ export default function CompanyDashboard() {
       <div className="relative z-10 min-h-screen flex flex-col">
         {/* ── Top nav bar ─────────────────────────────────────── */}
         <header className="bg-white/10 backdrop-blur-md border-b border-white/20">
-          <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
             {/* Brand */}
             <div className="flex items-center gap-3">
               <div className="bg-white/20 rounded-xl p-2">
@@ -332,10 +332,10 @@ export default function CompanyDashboard() {
         </header>
 
         {/* ── Page body ────────────────────────────────────────── */}
-        <div className="flex-1 max-w-6xl mx-auto w-full px-6 py-8">
+        <div className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8">
           {/* Page title */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-black text-white">Quota Management</h1>
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-black text-white">Quota Management</h1>
             <p className="text-white/60 text-sm mt-1">
               View your quota limits and submit new quota requests.
             </p>
@@ -394,7 +394,7 @@ export default function CompanyDashboard() {
           {/* ── Quota requests section ──────────────────────────── */}
           <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl overflow-hidden">
             {/* Section header */}
-            <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+            <div className="flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100 flex-wrap gap-3">
               <div>
                 <h2 className="text-lg font-black text-gray-900">
                   Quota Requests
@@ -465,7 +465,7 @@ export default function CompanyDashboard() {
             )}
 
             {/* ── Table / skeleton / empty ─────────────────────── */}
-            <div className="px-6 py-4">
+            <div className="px-4 sm:px-6 py-4">
               {quotaLoading ? (
                 /* Skeleton rows */
                 <div className="space-y-3">

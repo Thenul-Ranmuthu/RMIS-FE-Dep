@@ -50,7 +50,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="relative min-h-screen w-screen overflow-hidden flex items-center justify-center">
+    <div className="relative min-h-screen w-full flex items-center justify-center px-4">
       {/* Background */}
       <div
         className="absolute inset-0"

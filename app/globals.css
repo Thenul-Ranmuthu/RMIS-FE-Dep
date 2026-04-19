@@ -635,3 +635,52 @@ body {
   text-decoration: underline;
   color: white;
 }
+
+/* ─── Mobile Responsive Overrides ─────────────────────────────── */
+@media (max-width: 768px) {
+  /* Ministry/quota sidebar becomes hidden drawer via JS toggle */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    margin: 0;
+    border-radius: 0;
+    z-index: 40;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    width: 280px;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .main-content {
+    padding: 16px;
+  }
+
+  .page-header {
+    width: 100%;
+    padding: 16px;
+  }
+
+  .page-header h2 {
+    font-size: 20px;
+  }
+
+  .summary-cards-container {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .master-table-card {
+    overflow-x: auto;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-topbar {
+    display: none !important;
+  }
+}

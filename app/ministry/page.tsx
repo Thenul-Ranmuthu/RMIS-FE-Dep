@@ -25,7 +25,7 @@ export default function MinistryPortalPage() {
             <div className="flex flex-col sm:flex-row gap-6 w-full max-w-2xl">
 
                 {/* Ministry Officer Card */}
-                <div className="flex-1 bg-white rounded-3xl shadow-xl p-8 flex flex-col gap-6 border border-gray-100">
+                <div className="flex-1 bg-white rounded-3xl shadow-xl p-6 sm:p-8 flex flex-col gap-6 border border-gray-100">
                     <div>
                         <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-emerald-50 mb-4">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -61,7 +61,7 @@ export default function MinistryPortalPage() {
                 </div>
 
                 {/* Admin Card */}
-                <div className="flex-1 bg-white rounded-3xl shadow-xl p-8 flex flex-col gap-6 border border-gray-100">
+                <div className="flex-1 bg-white rounded-3xl shadow-xl p-6 sm:p-8 flex flex-col gap-6 border border-gray-100">
                     <div>
                         <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-slate-100 mb-4">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">

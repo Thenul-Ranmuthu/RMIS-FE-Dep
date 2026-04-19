@@ -26,7 +26,7 @@ export default function TechnicianDashboard() {
 
     return (
         <main
-            className="min-h-screen flex items-center justify-center p-8"
+            className="min-h-screen flex items-center justify-center p-4 sm:p-8"
             style={{
                 backgroundImage: "url('/background.png')",
                 backgroundSize: "cover",
@@ -36,7 +36,7 @@ export default function TechnicianDashboard() {
         >
             <div className="absolute inset-0 bg-black/40" />
 
-            <div className="relative bg-white/90 backdrop-blur-sm p-10 rounded-2xl shadow-xl max-w-md w-full text-center">
+            <div className="relative bg-white/90 backdrop-blur-sm p-6 sm:p-10 rounded-2xl shadow-xl max-w-md w-full text-center">
                 <div className="flex justify-center mb-4">
                     <div className="bg-blue-100 rounded-full p-4">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">

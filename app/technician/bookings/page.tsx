@@ -480,10 +480,12 @@ const s: Record<string, CSSProperties> = {
   headerInner: {
     maxWidth: 1200,
     margin: "0 auto",
-    padding: "14px 32px",
+    padding: "12px 16px",
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
+    flexWrap: "wrap" as const,
+    gap: 8,
   },
   headerLeft: { display: "flex", alignItems: "center", gap: 16 },
   logoBox: {
@@ -524,7 +526,7 @@ const s: Record<string, CSSProperties> = {
   },
 
   // main
-  main: { maxWidth: 1200, margin: "0 auto", padding: "28px 32px 60px" },
+  main: { maxWidth: 1200, margin: "0 auto", padding: "20px 16px 60px" },
 
   // hero
   hero: {
@@ -533,7 +535,7 @@ const s: Record<string, CSSProperties> = {
     overflow: "hidden",
     background:
       "linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%)",
-    padding: "40px 40px 32px",
+    padding: "24px 20px 20px",
     marginBottom: 28,
     display: "flex",
     flexDirection: "column",
@@ -772,7 +774,7 @@ const s: Record<string, CSSProperties> = {
     background: "#fff",
     border: "1px solid #e2e8f0",
     borderRadius: 20,
-    padding: "36px 32px",
+    padding: "28px 20px",
     textAlign: "center",
     maxWidth: 380,
     width: "100%",
@@ -809,7 +811,7 @@ const s: Record<string, CSSProperties> = {
 
   footer: {
     textAlign: "center",
-    padding: "24px 32px",
+    padding: "20px 16px",
     borderTop: "1px solid #f1f5f9",
     fontSize: 12,
     color: "#cbd5e1",
