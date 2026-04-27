@@ -4,8 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://www.rmis.space/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5050";
 
 type TokenStatus = "validating" | "valid" | "invalid";
 type SubmitStatus = "idle" | "loading" | "success" | "error";
@@ -106,7 +105,7 @@ function ResetPasswordForm() {
 
       setSubmitStatus("success");
       // Auto-redirect after 3s
-      setTimeout(() => router.push("/"), 3000);
+      setTimeout(() => router.push("/login"), 3000);
     } catch (err) {
       setSubmitStatus("error");
       setErrorMsg(
@@ -187,7 +186,7 @@ function ResetPasswordForm() {
         </Link>
         <p className="text-sm text-gray-400">
           <Link
-            href="/"
+            href="/login"
             className="text-emerald-600 hover:text-emerald-700 font-medium transition"
           >
             ← Back to Sign In
@@ -250,7 +249,7 @@ function ResetPasswordForm() {
           Redirecting to sign in…
         </div>
         <Link
-          href="/"
+          href="/login"
           className="w-full inline-block bg-emerald-600 hover:bg-emerald-700 text-white py-3.5 rounded-xl text-sm font-bold text-center shadow-lg shadow-emerald-200 transition-all duration-200"
         >
           Sign In Now
@@ -614,7 +613,7 @@ function ResetPasswordForm() {
 
         <p className="text-center text-sm text-gray-500 mt-5">
           <Link
-            href="/"
+            href="/login"
             className="text-emerald-600 font-semibold hover:text-emerald-700 transition"
           >
             ← Back to Sign In

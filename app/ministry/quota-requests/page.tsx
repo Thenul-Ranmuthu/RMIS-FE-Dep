@@ -3,19 +3,17 @@
 
 import { useState, useEffect, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { getToken, getRole } from "@/services/authService";
+import { getToken, getRole, logout } from "@/services/authService";
 import Link from "next/link";
 import {
     LayoutDashboard,
     Files,
     BarChart2,
-    Settings,
     LogOut,
-    Leaf,
-    FileText,
     CheckCircle,
     RefreshCw,
 } from "lucide-react";
+import MinistrySidebar from "@/components/MinistrySidebar";
 import QuotaTable from "@/components/quota-requests/QuotaTable";
 import QuotaFiltersPanel from "@/components/quota-requests/QuotaFilters";
 import QuotaPagination from "@/components/quota-requests/QuotaPagination";
@@ -46,9 +44,7 @@ function QuotaRequestsContent() {
         [companyName, status, submissionDate]
     );
 
-    // ── Component state ────────────────────────────────────────────────────
-    const [activeTab, setActiveTab] = useState("quota_requests");
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+
     const [data, setData] = useState<QuotaPaginatedResponse | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -167,56 +163,24 @@ function QuotaRequestsContent() {
         }
     };
 
-    // ── Logout ─────────────────────────────────────────────────────────────
-    const handleLogout = () => {
-        localStorage.removeItem("accessToken");
-        sessionStorage.removeItem("accessToken");
-        document.cookie = "accessToken=; path=/; max-age=0"; // ← clear cookie
-        router.push("/ministry");
-    };
+
 
     // ── Stats ──────────────────────────────────────────────────────────────
     const rows = data?.data ?? [];
-    const approvedTons = rows
-        .filter((r) => r.status === "APPROVED")
-        .reduce((sum, r) => sum + r.requested_quota, 0);
-    const pendingCount = rows.filter((r) => r.status === "PENDING").length;
     const totalCount = data?.totalRecords ?? 0;
 
+// Preview of the new Sidebar layout
     if (!authChecked) return null;
+
     return (
-        <div
-            style={{
-                display: "flex",
-                minHeight: "100vh",
-                backgroundImage: `url('/bg.png')`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                backgroundAttachment: "fixed",
-                backgroundRepeat: "no-repeat",
-            }}
-        >
-            {/* ── Mobile overlay ────────────────────────────────────────── */}
-            {sidebarOpen && (
-                <div
-                    className="fixed inset-0 bg-black/50 z-30 md:hidden"
-                    onClick={() => setSidebarOpen(false)}
-                />
-            )}
-
-            {/* ── Mobile topbar ─────────────────────────────────────────── */}
-            <div className="mobile-topbar fixed top-0 left-0 right-0 z-20 bg-[rgba(10,40,20,0.95)] backdrop-blur-md border-b border-white/10 px-4 py-3 flex items-center gap-3 md:hidden">
-                <button
-                    onClick={() => setSidebarOpen(true)}
-                    className="p-2 rounded-lg text-white hover:bg-white/10 transition"
-                >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                    </svg>
-                </button>
-                <span className="text-white font-bold text-sm">Quota Requests</span>
-            </div>
-
+        <div className="admin-theme" style={{
+            display: 'flex',
+            minHeight: '100vh',
+            backgroundImage: "url('/ministry_dashboard_bg_deer_1776617937111.png')",
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundAttachment: 'fixed'
+        }}>
             {/* ── Review Modal (RMIS-27) ─────────────────────────────────── */}
             {modalOpen && selectedId && (
                 <QuotaReviewModal
@@ -227,145 +191,66 @@ function QuotaRequestsContent() {
             )}
 
             {/* ── Sidebar ───────────────────────────────────────────────── */}
-            <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
-                <div className="sidebar-header">
-                    <div className="logo-icon">
-                        <RefreshCw size={24} color="#2ecc71" />
-                    </div>
-                    <div className="logo-text">
-                        <h1>Ministry of Environment</h1>
-                        <span>Environmental Quota Division</span>
-                    </div>
-                </div>
-
-                <ul className="nav-links">
-                    <li
-                        className={`nav-item ${activeTab === "dashboard" ? "active" : ""}`}
-                        onClick={() => setActiveTab("dashboard")}
-                    >
-                        <LayoutDashboard size={18} />
-                        <span>Dashboard</span>
-                    </li>
-                    <li
-                        className={`nav-item ${activeTab === "quota_requests" ? "active" : ""}`}
-                        onClick={() => setActiveTab("quota_requests")}
-                    >
-                        <Files size={18} />
-                        <span>Quota Requests</span>
-                    </li>
-                    <li
-                        className={`nav-item ${activeTab === "reports" ? "active" : ""}`}
-                        onClick={() => setActiveTab("reports")}
-                    >
-                        <BarChart2 size={18} />
-                        <span>Reports</span>
-                    </li>
-                    <li
-                        className={`nav-item ${activeTab === "settings" ? "active" : ""}`}
-                        onClick={() => setActiveTab("settings")}
-                    >
-                        <Settings size={18} />
-                        <span>Settings</span>
-                    </li>
-                </ul>
-
-                <div className="sidebar-footer">
-                    <div className="user-profile">
-                        <div
-                            className="avatar"
-                            style={{
-                                backgroundImage: "url('https://i.pravatar.cc/150?img=11')",
-                            }}
-                        />
-                        <div className="user-info">
-                            <h4>Ministry Officer</h4>
-                            <span>Recs: {totalCount}</span>
-                        </div>
-                        <div style={{ marginLeft: "auto" }}>
-                            <CheckCircle size={16} color="rgba(255,255,255,0.5)" />
-                        </div>
-                    </div>
-                    <div className="logout-btn" onClick={handleLogout}>
-                        <LogOut size={18} />
-                        <span>Logout</span>
-                    </div>
-                </div>
-            </aside>
+            <MinistrySidebar totalCount={totalCount} />
 
             {/* ── Main Content ──────────────────────────────────────────── */}
-            <main className="main-content" style={{ paddingTop: undefined }}>
-                <div style={{ height: 0 }} className="block md:hidden" aria-hidden />
-                <style>{`@media (max-width: 768px) { .main-content { padding-top: 60px !important; } }`}</style>
-                <div className="page-header">
-                    <h2>Quota Requests Management</h2>
-                    <p>Review, approve, or reject industrial environmental quota applications.</p>
+            <main className="main-content" style={{ background: 'rgba(255, 255, 255, 0.45)', backdropFilter: 'blur(40px)' }}>
+                <div className="page-header" style={{
+                    background: 'rgba(255, 255, 255, 0.7)',
+                    backdropFilter: 'blur(20px)',
+                    border: '1px solid rgba(255, 255, 255, 0.5)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    maxWidth: '800px',
+                    margin: '0 auto 32px auto',
+                    textAlign: 'center'
+                }}>
+                    <div style={{ width: '100%' }}>
+                        <h2>Quota Requests Management</h2>
+                        <p>Review, approve, or reject industrial environmental quota applications.</p>
+                    </div>
                 </div>
 
-                <div className="master-table-card">
+                <div className="master-table-card" style={{
+                    background: 'rgba(255, 255, 255, 0.9)',
+                    backdropFilter: 'blur(20px)',
+                    border: '1px solid rgba(255, 255, 255, 1)',
+                    boxShadow: '0 20px 40px rgba(0,0,0,0.1)'
+                }}>
                     <QuotaFiltersPanel filters={filters} onFilterChange={handleFilterChange} />
 
                     <div className="table-section">
                         <QuotaTable
                             data={rows}
                             isLoading={isLoading}
-                            onReview={handleReview}         // ← RMIS-27: opens QuotaReviewModal
-                            onStatusChange={refreshData}    // ← RMIS-23: refreshes after approve/reject
+                            onReview={handleReview}
+                            onStatusChange={refreshData}
                         />
                     </div>
 
                     {data && (
-                        <QuotaPagination
-                            currentPage={data.currentPage}
-                            totalCount={data.totalRecords}
-                            totalPages={data.totalPages}
-                            pageSize={pageSize}
-                            onPageChange={handlePageChange}
-                            onPageSizeChange={handlePageSizeChange}
-                        />
+                        <div style={{ padding: '0 24px 24px 24px' }}>
+                            <QuotaPagination
+                                currentPage={data.currentPage}
+                                totalCount={data.totalRecords}
+                                totalPages={data.totalPages}
+                                pageSize={pageSize}
+                                onPageChange={handlePageChange}
+                                onPageSizeChange={handlePageSizeChange}
+                            />
+                        </div>
                     )}
                 </div>
 
-                {/* Summary Cards */}
-                <div
-                    className="summary-cards-container"
-                    style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}
-                >
-                    <div className="summary-card">
-                        <div className="summary-icon green">
-                            <Leaf size={20} />
-                        </div>
-                        <div className="summary-info">
-                            <h3>Approved Quotas</h3>
-                            <div className="summary-value">
-                                {approvedTons.toLocaleString()} <span>Tons</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="summary-card">
-                        <div className="summary-icon yellow">
-                            <FileText size={20} />
-                        </div>
-                        <div className="summary-info">
-                            <h3>Pending Review</h3>
-                            <div className="summary-value">
-                                {pendingCount} <span>Requests</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <footer className="app-footer">
-                    <span>&copy; 2024 Ministry of Environment</span>
-                    <Link href="#">All Rights Reserved.</Link>
-                    <Link href="#">Help Center</Link>
+                <footer className="app-footer" style={{ marginTop: 'auto', padding: '20px 0', borderTop: '1px solid rgba(0,0,0,0.05)', display: 'flex', justifyContent: 'center', gap: '24px' }}>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>&copy; 2024 Ministry of Environment</span>
+                    <Link href="#" style={{ color: 'var(--primary-color)', fontSize: '13px', fontWeight: 600 }}>Help Center</Link>
                 </footer>
             </main>
         </div>
     );
 }
-
-
 
 // ── Suspense wrapper — required because useSearchParams needs it ───────────
 export default function QuotaRequestsPage() {

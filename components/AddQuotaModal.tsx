@@ -15,6 +15,7 @@ export default function AddQuotaModal({
   onSuccess,
 }: AddQuotaModalProps) {
   const [amount, setAmount] = useState<string>("");
+  const [reason, setReason] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>("");
 
@@ -25,6 +26,11 @@ export default function AddQuotaModal({
     const parsed = parseFloat(amount);
     if (isNaN(parsed) || parsed <= 0) {
       setError("Please enter a valid positive quota amount.");
+      return;
+    }
+
+    if (!reason.trim()) {
+      setError("Please provide a reason for your request.");
       return;
     }
 
@@ -40,6 +46,7 @@ export default function AddQuotaModal({
       await addQuota(token, {
         companyEmail,
         requestedQuota: parsed,
+        requestReason: reason.trim(),
       });
       onSuccess();
     } catch (err) {
@@ -182,6 +189,25 @@ export default function AddQuotaModal({
             <p className="text-xs text-gray-400 mt-1.5">
               Enter the amount of quota you are requesting (numeric value).
             </p>
+          </div>
+
+          {/* Request Reason */}
+          <div className="mb-6">
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              Reason for Request
+            </label>
+            <textarea
+              value={reason}
+              onChange={(e) => {
+                setReason(e.target.value);
+                setError("");
+              }}
+              placeholder="Explain why you need additional quota..."
+              disabled={isLoading}
+              rows={3}
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition placeholder-gray-400 disabled:opacity-60 resize-none"
+              required
+            />
           </div>
 
           {/* Error */}

@@ -94,8 +94,8 @@ export default function MyBookingsPage() {
                             tickets={tickets} 
                             loading={loading} 
                             onViewDirectory={() => router.push('/public/directory')}
-                            onViewDetails={(ticketNum: string) => alert(`Details for ticket ${ticketNum}`)}
                             onCancel={handleCancel}
+                            onRatingSuccess={fetchTickets}
                         />
                     )}
                 </div>

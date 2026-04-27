@@ -28,12 +28,12 @@ export default function VerifyEmailPage() {
   const getEndpoint = (role: string, code: string): string => {
     switch (role) {
       case "Technician":
-        return `https://www.rmis.space/api/auth/technician/register/${code}`;
+        return `http://localhost:5050/auth/technician/register/${code}`;
       case "Company":
-        return `https://www.rmis.space/api/auth/company/register/${code}`;
+        return `http://localhost:5050/auth/company/register/${code}`;
       case "Public User":
       default:
-        return `https://www.rmis.space/api/auth/user/register/${code}`;
+        return `http://localhost:5050/auth/user/register/${code}`;
     }
   };
 
@@ -140,10 +140,10 @@ export default function VerifyEmailPage() {
         alert(
           "Registration successful! Your account is pending admin approval.",
         );
-        router.push("/");
+        router.push("/login");
       } else {
         alert("Registration successful! Please log in.");
-        router.push("/");
+        router.push("/login");
       }
     } catch (err) {
       setError(
@@ -162,12 +162,9 @@ export default function VerifyEmailPage() {
     setResendMessage("");
 
     try {
-      const response = await fetch(
-        `https://www.rmis.space/api/sendMail/${email}`,
-        {
-          method: "GET",
-        },
-      );
+      const response = await fetch(`http://localhost:5050/sendMail/${email}`, {
+        method: "GET",
+      });
 
       if (!response.ok) throw new Error("Failed to resend");
       setResendMessage("A new code has been sent to your email.");

@@ -7,8 +7,7 @@ import {
   raiseTicketAsCompany,
 } from "@/services/serviceTicketService";
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || "https://www.rmis.space/api";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5050";
 
 interface AvailabilitySlot {
   id: number;
@@ -105,7 +104,7 @@ export default function BookTechnicianPage() {
       sessionStorage.getItem("accessToken");
 
     if (!raw || !token) {
-      router.push("/");
+      router.push("/login");
       return;
     }
     try {
@@ -121,7 +120,7 @@ export default function BookTechnicianPage() {
         return;
       }
     } catch {
-      router.push("/");
+      router.push("/login");
       return;
     }
     setAuthChecked(true);
@@ -209,8 +208,8 @@ export default function BookTechnicianPage() {
 
   if (successTicket) {
     return (
-      <main className="min-h-screen bg-[#0f172a] flex items-center justify-center p-6 font-['Public_Sans']">
-        <div className="bg-[#111827] p-6 sm:p-10 rounded-[40px] shadow-2xl border border-emerald-500/20 max-w-xl w-full text-center relative overflow-hidden group">
+      <main className="min-h-screen bg-[#0f172a] flex items-center justify-center p-4 sm:p-6 font-['Public_Sans']">
+        <div className="bg-[#111827] p-6 sm:p-10 rounded-[24px] sm:rounded-[40px] shadow-2xl border border-emerald-500/20 max-w-xl w-full text-center relative overflow-hidden group">
           <div className="absolute top-0 left-0 w-full h-2 bg-emerald-600 shadow-[0_0_20px_rgba(5,150,105,0.4)]" />
 
           <div className="mb-8 flex justify-center">
@@ -222,7 +221,7 @@ export default function BookTechnicianPage() {
             </div>
           </div>
 
-          <h2 className="text-4xl font-black text-slate-50 tracking-tight mb-4">
+          <h2 className="text-2xl sm:text-4xl font-black text-slate-50 tracking-tight mb-4">
             Booking Successful!
           </h2>
           <p className="text-slate-400 font-medium mb-8 leading-relaxed max-w-sm mx-auto">
@@ -233,7 +232,7 @@ export default function BookTechnicianPage() {
             has been confirmed. The technician has been notified via email.
           </p>
 
-          <div className="bg-slate-800/40 rounded-3xl p-6 mb-10 text-left border border-white/5 backdrop-blur-sm">
+          <div className="bg-slate-800/40 rounded-2xl sm:rounded-3xl p-4 sm:p-6 mb-8 sm:mb-10 text-left border border-white/5 backdrop-blur-sm">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-[10px] font-black text-emerald-500/50 uppercase tracking-widest mb-1">
@@ -272,13 +271,13 @@ export default function BookTechnicianPage() {
     );
   }
 
-  // ── Loading / Error ───────────────────────────────────────────
+  // ── Loading / Error ──────────────────────────────────────────
   if (!authChecked || loadingSlots) {
     return (
       <div className="book-page">
         <div className="center-wrap">
           <div className="spinner" />
-          <p className="loading-txt">Loading availability…</p>
+          <p className="loading-txt">Loading availability...</p>
         </div>
         <style jsx global>
           {pageStyles}
@@ -323,6 +322,7 @@ export default function BookTechnicianPage() {
             Back
           </button>
         </div>
+
         {/* ── Left: Technician profile ────────────────────── */}
         <aside className="tech-pane">
           <div className="tech-avatar">{initials}</div>
@@ -346,7 +346,7 @@ export default function BookTechnicianPage() {
             )}
             {technician?.yearsOfExperience !== undefined && (
               <div className="tech-meta-row">
-                <span className="meta-icon">🕐</span>
+                <span className="meta-icon">⌛</span>
                 <span className="meta-label">Experience</span>
                 <span className="meta-val">
                   {technician.yearsOfExperience} yrs
@@ -376,7 +376,7 @@ export default function BookTechnicianPage() {
           )}
         </aside>
 
-        {/* ── Right: Booking form ─────────────────────────── */}
+        {/* ── Right: Booking form ────────────────────────── */}
         <div className="form-pane">
           <div className="form-header">
             <h1>Book a Service Appointment</h1>
@@ -384,10 +384,19 @@ export default function BookTechnicianPage() {
               Select an available time slot, choose your service type, and
               confirm your booking.
             </p>
+            <div className="step-breadcrumb">
+              <span className="crumb-active">Step 1 of 3</span>
+              <span className="crumb-sep"> · </span>
+              <span className="crumb-active">Time</span>
+              <span className="crumb-sep"> → </span>
+              <span className="crumb-dim">Service</span>
+              <span className="crumb-sep"> → </span>
+              <span className="crumb-dim">Confirm</span>
+            </div>
           </div>
 
           <form onSubmit={handleSubmit} noValidate>
-            {/* ── Step 1: Pick a slot ─────────────────── */}
+            {/* ── Step 1: Pick a slot ────────────────── */}
             <div className="form-section">
               <div className="section-label">
                 <span className="step-num">1</span>
@@ -447,26 +456,31 @@ export default function BookTechnicianPage() {
               )}
             </div>
 
-            {/* ── Step 2: Service type ─────────────────── */}
+            {/* ── Step 2: Service type ────────────────── */}
             <div className="form-section">
               <div className="section-label">
                 <span className="step-num">2</span>
                 Service Type <span className="required">*</span>
               </div>
-              <select
-                id="serviceType"
-                value={serviceType}
-                onChange={(e) => setServiceType(e.target.value)}
-                required
-                className="form-select"
-              >
-                <option value="">— Select service type —</option>
-                {SERVICE_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
+              <div className="form-select-wrap">
+                <span className="form-select-icon">🔧</span>
+                <select
+                  id="serviceType"
+                  value={serviceType}
+                  onChange={(e) => setServiceType(e.target.value)}
+                  required
+                  className="form-select"
+                >
+                  <option value="" disabled>
+                    Choose a service
                   </option>
-                ))}
-              </select>
+                  {SERVICE_TYPES.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {/* ── Step 3: Description ──────────────────── */}
@@ -481,13 +495,13 @@ export default function BookTechnicianPage() {
                 onChange={(e) => setDescription(e.target.value)}
                 maxLength={500}
                 rows={4}
-                placeholder="Describe the issue or what service you need…"
+                placeholder="Describe the issue or what service you need..."
                 className="form-textarea"
               />
               <div className="char-count">{description.length}/500</div>
             </div>
 
-            {/* ── Error ─────────────────────────────────── */}
+            {/* ── Error ───────────────────────────────── */}
             {submitError && (
               <div className="submit-error">
                 <svg
@@ -504,11 +518,40 @@ export default function BookTechnicianPage() {
                     d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-                {submitError}
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "4px",
+                  }}
+                >
+                  <span>{submitError}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      localStorage.clear();
+                      sessionStorage.clear();
+                      window.location.href = "/login";
+                    }}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      padding: 0,
+                      color: "#f87171",
+                      textDecoration: "underline",
+                      cursor: "pointer",
+                      fontSize: "11px",
+                      fontWeight: "bold",
+                      textAlign: "left",
+                    }}
+                  >
+                    Session Expired? Click here to Log In Again
+                  </button>
+                </div>
               </div>
             )}
 
-            {/* ── Submit ─────────────────────────────────── */}
+            {/* ── Submit ──────────────────────────────── */}
             <button
               type="submit"
               disabled={submitting || slots.length === 0 || !selectedSlot}
@@ -518,13 +561,14 @@ export default function BookTechnicianPage() {
               {submitting ? (
                 <>
                   <span className="btn-spinner" />
-                  Creating Booking…
+                  Creating Booking...
                 </>
               ) : (
                 <>
+                  Confirm & Book Appointment
                   <svg
-                    width="16"
-                    height="16"
+                    width="18"
+                    height="18"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -532,11 +576,10 @@ export default function BookTechnicianPage() {
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      strokeWidth="2"
+                      d="M9 5l7 7-7 7"
                     />
                   </svg>
-                  Confirm Booking
                 </>
               )}
             </button>
@@ -552,346 +595,218 @@ export default function BookTechnicianPage() {
 }
 
 const pageStyles = `
-  @import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800;900&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-  * { box-sizing: border-box; }
-  
   .book-page {
     min-height: 100vh;
-    background-color: #011b0e !important;
-    font-family: 'Public Sans', sans-serif;
+    background: #0d1f12;
+    font-family: 'Inter', system-ui, sans-serif;
     position: relative;
     overflow-x: hidden;
   }
 
   .bg-texture {
-    position: fixed;
-    inset: 0;
-    background-image: url("/bg.png");
-    background-size: cover;
-    background-position: center;
-    opacity: 0.2;
-    z-index: 0;
-    pointer-events: none;
+    position: fixed; inset: 0;
+    background-color: #0d1f12;
+    background-size: cover; background-position: center;
+    opacity: 0.18; z-index: 0; pointer-events: none;
   }
 
-  /* ── Layout ──────────────────────────────────── */
   .book-layout {
-    display: grid;
-    grid-template-columns: 310px 1fr;
-    gap: 32px;
-    max-width: 1100px;
-    margin: 40px auto;
-    padding: 0 16px 60px;
-    position: relative;
-    z-index: 10;
+    display: grid; grid-template-columns: 300px 1fr; gap: 28px;
+    max-width: 1060px; margin: 0 auto; padding: 36px 28px 80px;
+    position: relative; z-index: 10; align-items: start;
   }
-  .layout-header {
-    grid-column: 1 / -1;
-    margin-bottom: -10px;
-  }
-  .back-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    color: #1a4a38;
-    border-radius: 12px;
-    padding: 10px 20px;
-    font-size: 13px;
-    font-weight: 800;
-    cursor: pointer;
-    transition: 0.2s;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  }
-  .back-btn:hover { background: #f1f5f9; transform: translateX(-3px); }
 
-  /* ── SOLID WHITE CARDS ───────────────────────── */
-  .tech-pane, .form-pane {
-    background: #ffffff !important;
-    opacity: 1 !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    border-radius: 36px;
-    box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.5);
+  .layout-header { grid-column: 1 / -1; margin-bottom: 4px; }
+
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.07); border: 1px solid rgba(74,222,128,0.18);
+    color: #bbf7d0; border-radius: 10px; padding: 9px 18px;
+    font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s;
   }
+  .back-btn:hover { background: rgba(74,222,128,0.1); color: #f0fdf4; transform: translateX(-3px); }
 
   .tech-pane {
-    padding: 24px 16px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    position: sticky;
-    top: 32px;
-    align-self: start;
-    color: #0f172a !important;
+    background: #ffffff; border-radius: 28px; padding: 36px 22px 28px;
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    position: sticky; top: 32px; box-shadow: 0 24px 60px rgba(0,0,0,0.45);
   }
+
   .tech-avatar {
-    width: 90px;
-    height: 90px;
-    border-radius: 32px;
-    background: #1a4a38;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 32px;
-    font-weight: 900;
-    color: #fff;
-    margin-bottom: 20px;
+    width: 88px; height: 88px; border-radius: 50%;
+    background: linear-gradient(135deg, #14532d, #166534);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px; font-weight: 800; color: #fff; margin-bottom: 18px;
+    border: 3px solid rgba(74,222,128,0.3); box-shadow: 0 8px 24px rgba(22,101,52,0.35);
   }
-  .tech-name { font-size: 22px; font-weight: 950; color: #012d1b !important; margin: 0; }
-  .tech-spec { font-size: 13px; color: #059669 !important; margin: 6px 0 24px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; }
 
+  .tech-name { font-size: 20px; font-weight: 800; color: #0d1f12; margin-bottom: 4px; }
+  .tech-spec { font-size: 11px; font-weight: 700; color: #16a34a; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 22px; }
+
+  .tech-meta-list { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
   .tech-meta-row {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: #f8fafc;
-    border: 1px solid #f1f5f9;
-    border-radius: 16px;
-    padding: 14px 18px;
-    margin-bottom: 10px;
-    text-align: left;
+    display: flex; align-items: center; gap: 10px;
+    background: #f0fdf4; border: 1px solid #dcfce7; border-radius: 12px;
+    padding: 12px 14px; text-align: left;
   }
-  .meta-label { font-size: 10px; color: #64748b !important; text-transform: uppercase; font-weight: 900; flex: 1; }
-  .meta-val { font-size: 14px; color: #0f172a !important; font-weight: 900; }
+  .meta-icon { font-size: 14px; flex-shrink: 0; }
+  .meta-label { font-size: 9px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; flex: 1; }
+  .meta-val { font-size: 13px; color: #0d1f12; font-weight: 700; }
+  .slot-count-badge { font-size: 12px; color: #64748b; font-weight: 500; margin-top: 10px; }
 
-  /* ── FORM PANE ───────────────────────────────── */
   .form-pane {
-    padding: 56px;
-    color: #0f172a !important;
+    background: #ffffff; border-radius: 28px; padding: 44px 48px 48px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.4); color: #0f172a;
   }
-  .form-header { margin-bottom: 40px; border-bottom: 2px solid #f1f5f9; padding-bottom: 24px; }
-  .form-header h1 { font-size: 36px; font-weight: 950; color: #012d1b !important; margin: 0 0 12px; letter-spacing: -0.04em; }
-  .form-header p { font-size: 16px; color: #475569 !important; margin: 0; font-weight: 700; line-height: 1.4; }
 
-  .form-section { margin-bottom: 40px; }
+  .form-header { margin-bottom: 22px; }
+  .form-header h1 { font-size: 26px; font-weight: 800; color: #0d1f12; margin-bottom: 8px; letter-spacing: -0.02em; }
+  .form-header p { font-size: 14px; color: #475569; line-height: 1.55; font-weight: 500; margin-bottom: 16px; }
+
+  .step-breadcrumb {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 999px;
+    padding: 7px 16px; font-size: 12px; font-weight: 600; color: #166534; margin-bottom: 24px;
+  }
+  .crumb-active { color: #15803d; font-weight: 700; }
+  .crumb-sep { color: #86efac; }
+  .crumb-dim { color: #86efac; }
+
+  .form-section { margin-bottom: 28px; }
   .section-label {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    font-size: 14px;
-    font-weight: 950;
-    color: #1a4a38 !important;
-    text-transform: uppercase;
-    letter-spacing: 0.2em;
-    margin-bottom: 20px;
+    display: flex; align-items: center; gap: 12px;
+    font-size: 11px; font-weight: 700; color: #0d1f12;
+    text-transform: uppercase; letter-spacing: 0.16em; margin-bottom: 14px;
   }
   .step-num {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 12px;
-    background: #1a4a38;
-    color: #fff;
-    font-size: 15px;
-    font-weight: 950;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 8px; background: #14532d;
+    color: #fff; font-size: 13px; font-weight: 800; flex-shrink: 0;
   }
+  .required { color: #ef4444; margin-left: 2px; }
+  .optional { color: #94a3b8; font-size: 10px; font-weight: 500; text-transform: none; letter-spacing: 0; }
 
+  .slots-container { display: flex; flex-direction: column; gap: 16px; }
   .date-header {
-    font-size: 14px;
-    font-weight: 950;
-    color: #0f172a !important;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
+    font-size: 11px; font-weight: 800; color: #374151; text-transform: uppercase;
+    letter-spacing: 0.14em; margin-bottom: 10px; display: flex; align-items: center; gap: 10px;
   }
-  .date-header::after { content: ''; flex: 1; height: 2px; background: #f1f5f9; }
+  .date-header::after { content: ''; flex: 1; height: 1px; background: #e5e7eb; }
+  .slots-row { display: flex; flex-wrap: wrap; gap: 10px; }
 
   .slot-chip {
-    background: #f1f5f9 !important;
-    border: 2px solid #cbd5e1 !important;
-    color: #1e293b !important;
-    border-radius: 14px;
-    padding: 16px 24px;
-    font-size: 14px;
-    font-weight: 800;
-    cursor: pointer;
-    transition: 0.2s;
+    background: #f8fafc; border: 1.5px solid #d1d5db; color: #374151;
+    border-radius: 12px; padding: 11px 18px; font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all 0.18s; white-space: nowrap;
   }
-  .slot-chip:hover:not(.slot-chip-selected) { border-color: #10b981 !important; background: #ffffff !important; transform: translateY(-3px); }
+  .slot-chip:hover:not(.slot-chip-selected) { border-color: #16a34a; background: #f0fdf4; color: #14532d; transform: translateY(-2px); }
   .slot-chip-selected {
-    background: #1a4a38 !important;
-    border-color: #1a4a38 !important;
-    color: #ffffff !important;
-    box-shadow: 0 10px 20px rgba(26, 74, 56, 0.3);
-    transform: translateY(-3px);
+    background: #14532d; border-color: #14532d; color: #fff;
+    box-shadow: 0 6px 16px rgba(20,83,45,0.28); transform: translateY(-2px);
   }
+
+  .no-slots {
+    display: flex; align-items: center; gap: 12px;
+    background: #fafafa; border: 1.5px dashed #d1d5db; border-radius: 12px;
+    padding: 18px; color: #6b7280; font-size: 13px; font-weight: 500;
+  }
+  .selected-slot-badge { margin-top: 10px; font-size: 12px; color: #16a34a; font-weight: 600; display: inline-block; }
+
+  .form-select-wrap { position: relative; }
+  .form-select-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 15px; pointer-events: none; }
 
   .form-select, .form-textarea {
-    width: 100%;
-    background: #f8fafc !important;
-    border: 2px solid #cbd5e1 !important;
-    color: #0f172a !important;
-    border-radius: 16px;
-    padding: 18px 20px;
-    font-size: 16px;
-    font-weight: 800;
-    outline: none;
-    transition: 0.2s;
-    appearance: none;
+    width: 100%; background: #f8fafc; border: 1.5px solid #d1d5db; color: #0f172a;
+    border-radius: 14px; padding: 14px 16px; font-size: 14px; font-weight: 600;
+    outline: none; transition: border-color 0.18s, box-shadow 0.18s;
+    appearance: none; font-family: 'Inter', sans-serif;
   }
   .form-select {
-    cursor: pointer;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23334155'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='4' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
-    background-repeat: no-repeat !important;
-    background-position: right 24px center !important;
-    background-size: 16px !important;
+    padding-left: 42px; cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23334155'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='4' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 14px center; background-size: 12px;
   }
-  .form-textarea { min-height: 140px; }
-  .form-textarea::placeholder { color: #94a3b8 !important; }
+  .form-select:focus, .form-textarea:focus { border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.1); background: #fff; }
+  .form-textarea { min-height: 128px; resize: vertical; }
+  .form-textarea::placeholder { color: #9ca3af; font-weight: 400; }
+  .char-count { font-size: 11px; color: #9ca3af; text-align: right; margin-top: 6px; font-weight: 500; }
 
   .submit-btn {
-    width: 100%;
-    background: #1a4a38 !important;
-    color: #ffffff !important;
-    border-radius: 24px;
-    padding: 22px 0;
-    font-size: 18px;
-    font-weight: 950;
-    text-transform: uppercase;
-    letter-spacing: 0.15em;
-    cursor: pointer;
-    transition: all 0.3s;
-    border: none;
-    box-shadow: 0 20px 40px rgba(26, 74, 56, 0.4);
+    width: 100%; background: linear-gradient(135deg, #14532d 0%, #166534 100%);
+    color: #ffffff; border-radius: 16px; padding: 18px 0; margin-top: 18px;
+    font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.25s;
+    border: none; box-shadow: 0 10px 28px rgba(20,83,45,0.35);
+    display: flex; align-items: center; justify-content: center; gap: 10px; letter-spacing: 0.02em;
   }
-  .submit-btn:hover:not(:disabled) { background: #064e3b !important; transform: translateY(-3px); box-shadow: 0 25px 50px rgba(26, 74, 56, 0.5); }
-  .submit-btn:disabled { opacity: 0.5; filter: grayscale(1); }
-  .btn-spinner { width: 22px; height: 22px; border: 4px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 1s linear infinite; }
+  .submit-btn:hover:not(:disabled) { background: linear-gradient(135deg, #166534 0%, #15803d 100%); transform: translateY(-2px); box-shadow: 0 16px 40px rgba(20,83,45,0.45); }
+  .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; filter: grayscale(0.5); }
+  .btn-spinner { width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 1s linear infinite; }
 
-  /* ── Success ─────────────────────────────────── */
-  .success-wrap {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px 16px;
+  .submit-error {
+    display: flex; align-items: center; gap: 8px;
+    background: #fef2f2; border: 1px solid #fee2e2; color: #b91c1c;
+    border-radius: 12px; padding: 12px 16px; font-size: 13px; font-weight: 600; margin-bottom: 16px;
   }
-  .success-card {
-    background: #111827;
-    border: 1px solid rgba(52, 211, 153, 0.25);
-    border-radius: 20px;
-    padding: 24px 20px;
-    text-align: center;
-    max-width: 440px;
-    width: 100%;
-    box-shadow: 0 24px 64px rgba(0,0,0,0.5);
-  }
-  .success-icon-ring {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    background: rgba(52, 211, 153, 0.1);
-    border: 2px solid rgba(52, 211, 153, 0.3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 20px;
-  }
-  .success-card h2 { font-size: 26px; font-weight: 800; color: #f1f5f9; margin: 0 0 8px; }
-  .success-card > p { font-size: 14px; color: #64748b; margin: 0 0 20px; }
-  .ticket-number {
-    background: rgba(4, 120, 87, 0.1);
-    border: 1px solid rgba(4, 120, 87, 0.3);
-    color: #34d399;
-    border-radius: 10px;
-    padding: 12px 20px;
-    font-size: 18px;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    margin-bottom: 10px;
-  }
-  .success-sub { font-size: 13px; color: #64748b; margin: 0 0 28px; }
-  .status-pending {
-    color: #fbbf24;
-    font-weight: 700;
-  }
-  .success-actions { display: flex; flex-direction: column; gap: 10px; }
-  .btn-success-primary {
-    background: #047857;
-    border: none;
-    color: #fff;
-    border-radius: 10px;
-    padding: 13px 0;
-    font-size: 14px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: background 0.15s ease;
-  }
-  .btn-success-primary:hover { background: #065f46; }
-  .btn-success-ghost {
-    background: transparent;
-    border: 1px solid rgba(255,255,255,0.1);
-    color: #64748b;
-    border-radius: 10px;
-    padding: 12px 0;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
-  .btn-success-ghost:hover { border-color: rgba(255,255,255,0.2); color: #94a3b8; }
 
-  /* ── Center / loading ────────────────────────── */
-  .center-wrap {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 14px;
-  }
-  .spinner {
-    width: 48px; height: 48px; border-radius: 50%;
-    border: 4px solid rgba(52, 211, 153, 0.18);
-    border-top-color: #34d399;
-    animation: spin 0.9s linear infinite;
-  }
+  .center-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 14px; }
+  .spinner { width: 48px; height: 48px; border-radius: 50%; border: 4px solid rgba(52,211,153,0.18); border-top-color: #34d399; animation: spin 0.9s linear infinite; }
   .loading-txt { color: #94a3b8; font-size: 13px; margin: 0; }
-  .err-card {
-    background: #111827;
-    border: 1px solid rgba(248, 113, 113, 0.2);
-    border-radius: 16px;
-    padding: 20px 16px;
-    text-align: center;
-    max-width: 360px;
-  }
+  .err-card { background: #111827; border: 1px solid rgba(248,113,113,0.2); border-radius: 16px; padding: 32px 28px; text-align: center; max-width: 360px; }
   .err-title { font-size: 18px; font-weight: 700; color: #f8fafc; margin: 0 0 8px; }
   .err-msg { font-size: 13px; color: #94a3b8; margin: 0 0 20px; }
-  .btn-back {
-    background: transparent;
-    border: 1px solid rgba(255,255,255,0.12);
-    color: #94a3b8;
-    border-radius: 8px;
-    padding: 9px 20px;
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }
+  .btn-back { background: transparent; border: 1px solid rgba(255,255,255,0.12); color: #94a3b8; border-radius: 8px; padding: 9px 20px; font-size: 13px; cursor: pointer; transition: all 0.15s ease; }
   .btn-back:hover { background: rgba(255,255,255,0.05); color: #e2e8f0; }
 
   @keyframes spin { to { transform: rotate(360deg); } }
 
+  @media (max-width: 900px) {
+    .book-layout { grid-template-columns: 260px 1fr; gap: 20px; padding: 28px 20px 60px; }
+    .form-pane { padding: 36px 32px 40px; }
+    .form-header h1 { font-size: 22px; }
+  }
   @media (max-width: 768px) {
-    .book-layout {
-      grid-template-columns: 1fr;
-      padding: 0 16px 40px;
-      margin-top: 20px;
-    }
-    .tech-pane { position: static; padding: 24px 16px; }
-    .form-pane { padding: 20px 16px; }
-    .book-topbar { padding: 12px 16px; }
-    .tech-hero { padding: 28px 16px; }
-    .slots-panel { padding: 20px 16px; }
-    .confirm-box { padding: 24px 16px; }
+    .book-layout { grid-template-columns: 1fr; padding: 24px 16px 40px; gap: 16px; }
+    .tech-pane { position: static; flex-direction: row; flex-wrap: wrap; justify-content: center; padding: 24px 20px; border-radius: 20px; gap: 16px; }
+    .tech-avatar { width: 64px; height: 64px; font-size: 22px; margin-bottom: 0; }
+    .tech-name { font-size: 18px; }
+    .tech-meta-list { flex-direction: row; flex-wrap: wrap; gap: 6px; }
+    .tech-meta-row { flex: 1 1 calc(50% - 4px); min-width: 130px; padding: 10px 12px; border-radius: 10px; }
+    .form-pane { padding: 28px 20px 32px; border-radius: 20px; }
+    .form-header h1 { font-size: 20px; }
+    .form-header p { font-size: 13px; }
+    .slot-chip { padding: 9px 14px; font-size: 12px; }
+    .form-select, .form-textarea { padding: 12px 14px; font-size: 13px; }
+    .form-select { padding-left: 36px; }
+    .submit-btn { padding: 16px 0; font-size: 14px; border-radius: 14px; }
+  }
+  @media (max-width: 480px) {
+    .book-layout { padding: 16px 12px 32px; }
+    .back-btn { padding: 7px 14px; font-size: 12px; }
+    .tech-pane { padding: 20px 16px; border-radius: 16px; }
+    .tech-avatar { width: 56px; height: 56px; font-size: 18px; }
+    .tech-name { font-size: 16px; }
+    .tech-spec { font-size: 10px; margin-bottom: 14px; }
+    .tech-meta-row { flex: 1 1 100%; }
+    .form-pane { padding: 24px 16px 28px; border-radius: 16px; }
+    .form-header h1 { font-size: 18px; }
+    .step-breadcrumb { font-size: 11px; padding: 5px 12px; }
+    .section-label { font-size: 10px; gap: 8px; }
+    .step-num { width: 22px; height: 22px; font-size: 11px; border-radius: 6px; }
+    .slot-chip { padding: 8px 12px; font-size: 11px; border-radius: 10px; }
+    .slots-row { gap: 6px; }
+    .form-select, .form-textarea { font-size: 13px; border-radius: 12px; padding: 11px 12px; }
+    .form-select { padding-left: 32px; }
+    .submit-btn { padding: 14px 0; font-size: 13px; border-radius: 12px; }
+    .char-count { font-size: 10px; }
+  }
+  @media (max-width: 360px) {
+    .book-layout { padding: 12px 8px 24px; }
+    .tech-pane { padding: 16px 12px; }
+    .form-pane { padding: 20px 12px 24px; }
+    .form-header h1 { font-size: 16px; }
+    .slot-chip { padding: 7px 10px; font-size: 10px; }
   }
 `;

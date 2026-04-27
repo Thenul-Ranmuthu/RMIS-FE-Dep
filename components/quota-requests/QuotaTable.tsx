@@ -147,39 +147,39 @@ export default function QuotaTable({ data, isLoading, onReview, onStatusChange }
 
                         {/* Data rows */}
                         {!isLoading && data.map((row) => {
-                            console.log('row:', row); 
                             return (
                             <tr
                                 key={row.request_id}
-                                className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors cursor-pointer"
-                                onClick={() => onReview(row.id, row.request_id)}  // ← detail view for row click
+                                className="hover:bg-emerald-50/30 transition-colors cursor-pointer"
+                                onClick={() => onReview(row.id, row.request_id)}
                             >
-                                <td className="px-6 py-4 text-sm font-medium text-slate-900 dark:text-slate-100">
+                                <td className="px-6 py-4 text-sm font-bold text-slate-900 border-b border-slate-50">
                                     #{row.request_id}
                                 </td>
-                                <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
+                                <td className="px-6 py-4 text-sm text-slate-600 border-b border-slate-50">
                                     {row.company_name}
                                 </td>
-                                <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
-                                    {row.requested_quota.toLocaleString()} Tons / Year
+                                <td className="px-6 py-4 text-sm text-slate-600 border-b border-slate-50">
+                                    {row.requested_quota.toLocaleString()} Tons
                                 </td>
-                                <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
+                                <td className="px-6 py-4 text-sm text-slate-600 border-b border-slate-50">
                                     {new Date(row.submission_date).toLocaleDateString("en-US", {
                                         month: "short",
                                         day: "numeric",
                                         year: "numeric",
                                     })}
                                 </td>
-                                <td className="px-6 py-4">
+                                <td className="px-6 py-4 border-b border-slate-50">
                                     <StatusBadge status={row.status} />
                                 </td>
-                                <td className="px-6 py-4 text-right">
+                                <td className="px-6 py-4 text-right border-b border-slate-50">
                                     <button
                                         onClick={(e) => {
-                                            e.stopPropagation(); // prevent row click firing too
+                                            e.stopPropagation();
                                             handleActionClick(row);
                                         }}
-                                        className={`font-semibold text-sm transition-colors ${getActionStyle(row.status)}`}
+                                        className={`font-bold text-sm transition-colors ${getActionStyle(row.status)}`}
+                                        style={{ textDecoration: 'none' }}
                                     >
                                         {getActionLabel(row.status)}
                                     </button>

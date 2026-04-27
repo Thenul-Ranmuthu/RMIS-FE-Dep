@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ReviewsModal } from "./ReviewsModal";
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || "https://www.rmis.space/api";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5050";
 
 interface Certification {
   id?: number;
@@ -38,6 +38,8 @@ interface Technician {
   registrationDate?: string;
   approvalDate?: string;
   certifications?: Certification[];
+  averageRating?: number;
+  ratingCount?: number;
 }
 
 const sriLankanDistricts = [
@@ -101,6 +103,9 @@ export default function PublicDirectory() {
   const [selectedSkill, setSelectedSkill] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [slotsPopover, setSlotsPopover] = useState<number | null>(null);
+  const [reviewsModalTech, setReviewsModalTech] = useState<Technician | null>(
+    null,
+  );
   const [reloadKey, setReloadKey] = useState(0);
 
   // Lazy slots state
@@ -109,6 +114,11 @@ export default function PublicDirectory() {
   );
   const [loadingSlots, setLoadingSlots] = useState<number | null>(null);
   const [slotsError, setSlotsError] = useState<number | null>(null);
+
+  // Ratings cache: stores {avg, count} per technician, fetched lazily
+  const [ratingsCache, setRatingsCache] = useState<
+    Record<number, { avg: number; count: number }>
+  >({});
 
   const PER_PAGE = 6;
 
@@ -136,7 +146,45 @@ export default function PublicDirectory() {
       }
     };
     fetchTechnicians();
+    // Also clear ratings cache on refresh
+    setRatingsCache({});
   }, [selectedDate, selectedSkill, reloadKey]);
+
+  // Fetch ratings for visible technicians on the current page
+  useEffect(() => {
+    if (currentItems.length === 0) return;
+    const toFetch = currentItems.filter(
+      (t) => ratingsCache[t.id] === undefined,
+    );
+    if (toFetch.length === 0) return;
+
+    toFetch.forEach(async (tech) => {
+      try {
+        const res = await fetch(
+          `${API_BASE}/public/technicians/${tech.id}/feedbacks`,
+        );
+        if (!res.ok) throw new Error("Failed");
+        const data = await res.json();
+        const reviews = Array.isArray(data) ? data : [];
+        const count = reviews.length;
+        const avg =
+          count > 0
+            ? reviews.reduce(
+                (sum: number, r: any) => sum + (r.rating || 0),
+                0,
+              ) / count
+            : 0;
+        setRatingsCache((prev) => ({ ...prev, [tech.id]: { avg, count } }));
+      } catch {
+        // If endpoint doesn't exist yet, show 0 reviews gracefully
+        setRatingsCache((prev) => ({
+          ...prev,
+          [tech.id]: { avg: 0, count: 0 },
+        }));
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, technicians]);
 
   const handleSlotsClick = async (techId: number) => {
     // Toggle close
@@ -312,12 +360,10 @@ export default function PublicDirectory() {
   return (
     <div className="page">
       <section className="hero">
-        <div className="hero-bg" />
-        <div className="hero-image" />
-        <div className="hero-overlay" />
+        <div className="hero-radial"></div>
         <div className="hero-content">
           <div className="badge">
-            <span className="badge-dot" />
+            <span className="badge-dot"></span>
             <span>Public Directory</span>
           </div>
           <h1>
@@ -334,12 +380,12 @@ export default function PublicDirectory() {
               <div className="stat-val">{technicians.length}</div>
               <div className="stat-lbl">Total</div>
             </div>
-            <div className="stat-divider" />
+            <div className="stat-divider"></div>
             <div className="stat">
               <div className="stat-val">{specs.length}</div>
               <div className="stat-lbl">Specializations</div>
             </div>
-            <div className="stat-divider" />
+            <div className="stat-divider"></div>
             <div className="stat">
               <div className="stat-val">{filtered.length}</div>
               <div className="stat-lbl">Matched</div>
@@ -348,101 +394,102 @@ export default function PublicDirectory() {
         </div>
       </section>
 
-      <section className="filters-bar">
-        <div className="filter-group filter-date">
-          <label>Date</label>
-          <input
-            type="date"
-            value={selectedDate}
-            min={new Date().toISOString().split("T")[0]}
-            onChange={(e) => setSelectedDate(e.target.value)}
-          />
-        </div>
-        <div className="filter-group small">
-          <label>Skill Level</label>
-          <select
-            value={selectedSkill}
-            onChange={(e) => setSelectedSkill(e.target.value)}
-          >
-            <option value="">All levels</option>
-            <option value="JUNIOR">Junior</option>
-            <option value="INTERMEDIATE">Intermediate</option>
-            <option value="SENIOR">Senior</option>
-          </select>
-        </div>
-        <div className="filter-group small">
-          <label>Specialization</label>
-          <select
-            value={selectedSpec}
-            onChange={(e) => setSelectedSpec(e.target.value)}
-          >
-            <option value="">All</option>
-            {specs.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="filter-group small">
-          <label>District</label>
-          <select
-            value={selectedDist}
-            onChange={(e) => setSelectedDist(e.target.value)}
-          >
-            <option value="">All districts</option>
-            {sriLankanDistricts.map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="filter-group search">
-          <label>Search</label>
-          <div className="search-wrap">
-            <svg
-              width="14"
-              height="14"
-              fill="none"
-              stroke="#64748b"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
+      <div className="filters-wrap">
+        <div className="filters-bar">
+          <div className="fg">
+            <label>Date</label>
             <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by name…"
+              type="date"
+              value={selectedDate}
+              min={new Date().toISOString().split("T")[0]}
+              onChange={(e) => setSelectedDate(e.target.value)}
             />
           </div>
+          <div className="fg">
+            <label>Skill Level</label>
+            <select
+              value={selectedSkill}
+              onChange={(e) => setSelectedSkill(e.target.value)}
+            >
+              <option value="">All levels</option>
+              <option value="JUNIOR">Junior</option>
+              <option value="INTERMEDIATE">Intermediate</option>
+              <option value="SENIOR">Senior</option>
+            </select>
+          </div>
+          <div className="fg">
+            <label>Specialization</label>
+            <select
+              value={selectedSpec}
+              onChange={(e) => setSelectedSpec(e.target.value)}
+            >
+              <option value="">All</option>
+              {specs.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="fg">
+            <label>District</label>
+            <select
+              value={selectedDist}
+              onChange={(e) => setSelectedDist(e.target.value)}
+            >
+              <option value="">All districts</option>
+              {sriLankanDistricts.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="fg">
+            <label>Search</label>
+            <div className="sw">
+              <svg
+                width="14"
+                height="14"
+                fill="none"
+                stroke="#6B7280"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                viewBox="0 0 24 24"
+              >
+                <circle cx="11" cy="11" r="7" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Search by name…"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+          {(searchTerm ||
+            selectedSpec ||
+            selectedDist ||
+            selectedSkill ||
+            selectedDate) && (
+            <button className="clear-btn" onClick={clearFilters}>
+              Clear All Filters
+            </button>
+          )}
         </div>
-        {(searchTerm ||
-          selectedSpec ||
-          selectedDist ||
-          selectedSkill ||
-          selectedDate) && (
-          <button className="clear-btn" onClick={clearFilters}>
-            Clear
-          </button>
-        )}
-      </section>
+      </div>
 
       <div className="filter-meta">
-        <span>
+        <span className="fmc">
           Showing <strong>{filtered.length}</strong> technicians
-          {selectedDate ? (
+          {selectedDate && (
             <>
               {" "}
               on <strong>{selectedDate}</strong>
             </>
-          ) : null}
+          )}
         </span>
       </div>
 
@@ -465,6 +512,7 @@ export default function PublicDirectory() {
 
               return (
                 <article key={tech.id} className="card">
+                  <div className="card-accent"></div>
                   {isOpen && (
                     <>
                       <div
@@ -539,7 +587,7 @@ export default function PublicDirectory() {
                     <div className="avatar">
                       {initials(tech.firstName, tech.lastName)}
                     </div>
-                    <div className="card-header-main">
+                    <div className="chm">
                       <div className="card-name">
                         {tech.firstName} {tech.lastName}
                       </div>
@@ -558,23 +606,124 @@ export default function PublicDirectory() {
                   </div>
 
                   <div className="card-body">
-                    <InfoRow
-                      icon={<ClockIcon />}
-                      label="Experience"
-                      value={`${tech.yearsOfExperience || 0} years`}
-                    />
-                    {tech.district ? (
-                      <InfoRow
-                        icon={<PinIcon />}
-                        label="District"
-                        value={tech.district}
-                      />
-                    ) : null}
-                    <InfoRow
-                      icon={<PhoneIcon />}
-                      label="Contact"
-                      value={tech.phoneNumber || "Not available"}
-                    />
+                    {/* Rating display */}
+                    {(() => {
+                      const ratingData = ratingsCache[tech.id];
+                      return (
+                        <div className="rating-row">
+                          <div className="stars">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <span
+                                key={star}
+                                className={
+                                  ratingData && ratingData.avg >= star
+                                    ? "star-full"
+                                    : ratingData && ratingData.avg >= star - 0.5
+                                      ? "star-half"
+                                      : "star-empty"
+                                }
+                              >
+                                ★
+                              </span>
+                            ))}
+                          </div>
+                          <span className="rating-text">
+                            {!ratingData ? "..." : ratingData.avg.toFixed(1)}
+                          </span>
+                          <span className="rating-count">
+                            {!ratingData
+                              ? ""
+                              : ratingData.count > 0
+                                ? `(${ratingData.count} review${ratingData.count !== 1 ? "s" : ""})`
+                                : "(No reviews)"}
+                          </span>
+                          {ratingData && ratingData.count > 0 && (
+                            <button
+                              className="reviews-link"
+                              onClick={() => setReviewsModalTech(tech)}
+                            >
+                              View
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })()}
+
+                    <div className="info-grid">
+                      <div className="info-row">
+                        <div className="info-icon">
+                          <svg
+                            width="14"
+                            height="14"
+                            fill="none"
+                            stroke="var(--p1)"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M12 6v6l4 2" />
+                          </svg>
+                        </div>
+                        <div>
+                          <div className="info-label">Experience</div>
+                          <div className="info-val">
+                            {tech.yearsOfExperience || 0} years
+                          </div>
+                        </div>
+                      </div>
+                      <div className="info-row">
+                        <div className="info-icon">
+                          <svg
+                            width="14"
+                            height="14"
+                            fill="none"
+                            stroke="var(--p1)"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            viewBox="0 0 24 24"
+                          >
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                            <circle cx="12" cy="10" r="3" />
+                          </svg>
+                        </div>
+                        <div>
+                          <div className="info-label">District</div>
+                          <div className="info-val">
+                            {tech.district || "N/A"}
+                          </div>
+                        </div>
+                      </div>
+                      <div
+                        className="info-row"
+                        style={{ gridColumn: "1 / -1" }}
+                      >
+                        <div className="info-icon">
+                          <svg
+                            width="14"
+                            height="14"
+                            fill="none"
+                            stroke="var(--p1)"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            viewBox="0 0 24 24"
+                          >
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.15 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.05 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <div className="info-label">Contact</div>
+                          <div className="info-val">
+                            {tech.phoneNumber || "Not available"}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="card-div"></div>
 
                     {tech.certifications && tech.certifications.length > 0 && (
                       <div className="certs">
@@ -596,28 +745,48 @@ export default function PublicDirectory() {
 
                     <div className="card-actions">
                       <button
-                        className={`btn-outline${hasFetchError ? " btn-outline-error" : ""}`}
+                        className={`btn-slots ${hasFetchError ? "error" : ""}`}
                         onClick={() => handleSlotsClick(tech.id)}
                         disabled={isFetching}
                       >
+                        <svg
+                          width="13"
+                          height="13"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          viewBox="0 0 24 24"
+                        >
+                          <rect x="3" y="4" width="18" height="18" rx="2" />
+                          <path d="M16 2v4M8 2v4M3 10h18" />
+                        </svg>
                         {isFetching
                           ? "Loading…"
                           : hasFetchError
-                            ? "⚠ Retry"
+                            ? "Retry"
                             : isCached
-                              ? `🕐 ${slotCount} Slot${slotCount !== 1 ? "s" : ""}`
-                              : "🕐 View Slots"}
+                              ? `${slotCount} Slots`
+                              : "View Slots"}
                       </button>
                       <button
-                        className="btn-primary"
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
+                        className="btn-book"
                         onClick={() => router.push(`/public/book/${tech.id}`)}
                       >
-                        Book Me →
+                        Book Now
+                        <svg
+                          width="13"
+                          height="13"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M5 12h14M12 5l7 7-7 7" />
+                        </svg>
                       </button>
                     </div>
                   </div>
@@ -632,15 +801,16 @@ export default function PublicDirectory() {
                 width="24"
                 height="24"
                 fill="none"
-                stroke="#34d399"
+                stroke="var(--p2)"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
                 viewBox="0 0 24 24"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
+                <circle cx="12" cy="12" r="10" />
+                <path d="M16 16s-1.5-2-4-2-4 2-4 2" />
+                <line x1="9" y1="9" x2="9.01" y2="9" />
+                <line x1="15" y1="9" x2="15.01" y2="9" />
               </svg>
             </div>
             <h3>No technicians found</h3>
@@ -652,6 +822,14 @@ export default function PublicDirectory() {
         )}
       </main>
 
+      {reviewsModalTech && (
+        <ReviewsModal
+          technicianId={reviewsModalTech.id}
+          technicianName={`${reviewsModalTech.firstName} ${reviewsModalTech.lastName}`}
+          onClose={() => setReviewsModalTech(null)}
+        />
+      )}
+
       {totalPages > 1 && (
         <div className="pagination">
           <button
@@ -659,7 +837,7 @@ export default function PublicDirectory() {
             onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
             disabled={currentPage === 1}
           >
-            ← Prev
+            ←
           </button>
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
             <button
@@ -675,13 +853,14 @@ export default function PublicDirectory() {
             onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
             disabled={currentPage === totalPages}
           >
-            Next →
+            →
           </button>
         </div>
       )}
 
       <footer className="footer">
-        © {new Date().getFullYear()} RMIS · Ministry of Environment
+        © {new Date().getFullYear()} RMIS · Ministry of Environment · All rights
+        reserved
       </footer>
 
       <style jsx global>
@@ -691,381 +870,304 @@ export default function PublicDirectory() {
   );
 }
 
-function InfoRow({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="info-row">
-      <div className="info-icon">{icon}</div>
-      <div className="info-text">
-        <div className="info-label">{label}</div>
-        <div className="info-val">{value}</div>
-      </div>
-    </div>
-  );
-}
-
-function ClockIcon() {
-  return (
-    <svg
-      width="13"
-      height="13"
-      fill="none"
-      stroke="#34d399"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-      />
-    </svg>
-  );
-}
-function PinIcon() {
-  return (
-    <svg
-      width="13"
-      height="13"
-      fill="none"
-      stroke="#34d399"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-      />
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-      />
-    </svg>
-  );
-}
-function PhoneIcon() {
-  return (
-    <svg
-      width="13"
-      height="13"
-      fill="none"
-      stroke="#34d399"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-      />
-    </svg>
-  );
-}
-
 const globalStyles = `
-  * { box-sizing: border-box; }
+  :root {
+    --p1:#1A4A38;--p2:#2C7A4B;--p3:#4ade80;
+    --bg:#f0faf5;--bg2:#e6f4ee;
+    --card:#ffffff;--card-border:rgba(26,74,56,0.1);
+    --hdr-bg:linear-gradient(160deg,#1A4A38 0%,#2C7A4B 55%,#1a5e40 100%);
+    --tm:#1F2937;--ts:#374151;--tmu:#6B7280;--tfa:#9CA3AF;
+    --pg:rgba(26,74,56,0.08);--pb:rgba(26,74,56,0.15);
+    --sbg:#C2EAD1;--st:#327552;--sbo:#86c9a6;
+    --abg:#FAEAB3;--at:#B07C25;--abo:#e8c96a;
+    --bbg:#dbeafe;--bt:#1e40af;--bbo:#93c5fd;
+    --gbg:#f1f5f9;--gt:#64748b;--gbo:#cbd5e1;
+    --rsm:8px;--rmd:12px;--rlg:20px;--rxl:24px;
+    --shadow:0 4px 24px rgba(26,74,56,0.08),0 1px 4px rgba(26,74,56,0.06);
+    --shadow-hover:0 12px 40px rgba(26,74,56,0.16),0 2px 8px rgba(26,74,56,0.1);
+  }
 
-  html, body { margin: 0; padding: 0; background: #0f172a; }
-
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
   .page {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--tm);
+    line-height: 1.5;
     min-height: 100vh;
-    background: #0f172a;
-    color: #f8fafc;
-    font-family: var(--font-sans, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
   }
 
-  .hero {
-    position: relative;
-    padding: 48px 40px 40px;
-    overflow: hidden;
-    background: #0f172a;
-    border-bottom: 1px solid rgba(4, 120, 87, 0.22);
-  }
-
-  .hero-bg {
-    position: absolute; inset: 0;
-    background: radial-gradient(ellipse 80% 60% at 60% 40%, rgba(4, 120, 87, 0.13) 0%, transparent 70%);
+  /* ── HERO ── */
+  .hero { position: relative; padding: 56px 40px 110px; overflow: hidden; background: var(--hdr-bg); }
+  .hero::after {
+    content: ''; position: absolute; inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
     pointer-events: none;
   }
-
-  .hero-image {
-    position: absolute; right: 0; top: 0; bottom: 0; width: 70%;
-    background-image: url('/public technician.png');
-    background-size: cover; background-position: center;
-    opacity: 0.66; filter: saturate(0.5);
-  }
-
-  .hero-overlay {
-    position: absolute; inset: 0;
-    background: linear-gradient(to right, #0f172a 0%, rgba(15, 23, 42, 0.92) 36%, transparent 100%);
-    pointer-events: none;
-  }
-
-  .hero-content { position: relative; z-index: 2; max-width: 560px; }
-
+  .hero-radial { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 60% 80% at 70% 50%, rgba(255, 255, 255, 0.06) 0%, transparent 70%), radial-gradient(ellipse 40% 60% at 5% 30%, rgba(0, 0, 0, 0.1) 0%, transparent 60%); }
+  .hero-content { position: relative; z-index: 2; max-width: 620px; }
+  
   .badge {
-    display: inline-flex; align-items: center; gap: 6px;
-    background: rgba(4, 120, 87, 0.14); border: 1px solid rgba(4, 120, 87, 0.3);
-    border-radius: 999px; padding: 4px 12px; margin-bottom: 16px;
+    display: inline-flex; align-items: center; gap: 7px;
+    background: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border-radius: 999px; padding: 5px 16px; margin-bottom: 22px;
   }
-  .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: #34d399; }
-  .badge span:last-child { font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: #34d399; }
+  .badge-dot { width: 7px; height: 7px; border-radius: 50%; background: #a7f3d0; box-shadow: 0 0 8px rgba(167, 243, 208, 0.8); animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { box-shadow: 0 0 8px rgba(167, 243, 208, 0.8) } 50% { box-shadow: 0 0 18px rgba(167, 243, 208, 1), 0 0 30px rgba(167, 243, 208, 0.4) } }
+  .badge span { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #d1fae5; }
+  
+  .hero h1 { font-size: clamp(34px, 5vw, 56px); font-weight: 800; line-height: 1.1; letter-spacing: -1.5px; color: #fff; margin-bottom: 14px; }
+  .hero h1 em { font-style: normal; color: #a7f3d0; }
+  .hero p { font-size: 15px; color: rgba(255, 255, 255, 0.8); line-height: 1.75; margin-bottom: 32px; max-width: 480px; }
+  
+  .hero-stats { display: flex; align-items: center; gap: 28px; flex-wrap: wrap; }
+  .stat { display: flex; flex-direction: column; gap: 4px; }
+  .stat-val { font-size: 30px; font-weight: 800; color: #fff; line-height: 1; }
+  .stat-lbl { font-size: 11px; font-weight: 600; color: rgba(255, 255, 255, 0.6); text-transform: uppercase; letter-spacing: 0.08em; }
+  .stat-divider { width: 1px; height: 40px; background: rgba(255, 255, 255, 0.2); }
 
-  .hero h1 { font-size: clamp(34px, 4vw, 54px); font-weight: 500; line-height: 1.14; color: #f1f5f9; margin: 0 0 12px; }
-  .hero h1 em { font-style: normal; color: #34d399; }
-  .hero p { font-size: 14px; color: #94a3b8; line-height: 1.7; margin: 0 0 28px; max-width: 460px; }
-
-  .hero-stats { display: flex; align-items: stretch; gap: 18px; flex-wrap: wrap; }
-  .stat { min-width: 92px; }
-  .stat-val { font-size: 26px; font-weight: 500; color: #f1f5f9; line-height: 1; }
-  .stat-lbl { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px; }
-  .stat-divider { width: 1px; align-self: stretch; background: rgba(255, 255, 255, 0.08); }
-
+  /* ── FILTER BAR ── */
+  .filters-wrap { position: relative; z-index: 10; margin: -52px 40px 0; }
   .filters-bar {
-    background: #111827; border-bottom: 1px solid rgba(4, 120, 87, 0.16);
-    padding: 20px 40px; display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;
+    background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.7); border-radius: var(--rxl); padding: 24px 28px;
+    display: grid; grid-template-columns: 160px repeat(3, 1fr) 240px; gap: 16px;
+    box-shadow: 0 16px 48px rgba(26, 74, 56, 0.12), 0 2px 8px rgba(26, 74, 56, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.5);
   }
-
-  .filter-group { display: flex; flex-direction: column; gap: 5px; min-width: 140px; }
-  .filter-date { width: 160px; }
-  .small { width: 160px; }
-  .search { width: 230px; }
-
-  .filter-group label { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.1em; color: #64748b; }
-
-  .filter-group input,
-  .filter-group select {
-    background: #1e293b; border: 1px solid rgba(4, 120, 87, 0.18);
-    color: #e2e8f0; border-radius: 8px; padding: 9px 12px;
-    font-size: 13px; width: 100%; outline: none;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease; appearance: none;
+  .fg { display: flex; flex-direction: column; gap: 6px; }
+  .fg label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--p1); }
+  .fg input, .fg select {
+    background: #f8fdf9; border: 1.5px solid rgba(26, 74, 56, 0.15); border-radius: var(--rsm);
+    color: var(--tm); padding: 10px 13px; font-size: 13px; font-family: inherit; width: 100%; outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s; appearance: none; -webkit-appearance: none;
   }
-  .filter-group input::placeholder { color: #475569; }
-  .filter-group input:focus,
-  .filter-group select:focus { border-color: #047857; box-shadow: 0 0 0 3px rgba(4, 120, 87, 0.12); }
-
-  .search-wrap { position: relative; width: 100%; }
-  .search-wrap svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; }
-  .search-wrap input { padding-left: 34px !important; }
-
+  .fg input::placeholder { color: var(--tfa); }
+  .fg input:focus, .fg select:focus { border-color: var(--p2); box-shadow: 0 0 0 3px rgba(44, 122, 75, 0.12); }
+  .fg select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%231A4A38' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; background-color: #f8fdf9;
+  }
+  .sw { position: relative; }
+  .sw svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+  .sw input { padding-left: 34px !important; }
+  
   .clear-btn {
-    background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.18);
-    color: #f87171; border-radius: 8px; padding: 9px 16px; font-size: 12px;
-    cursor: pointer; white-space: nowrap; align-self: flex-end;
-    transition: background 0.15s ease, transform 0.12s ease;
+    grid-column: 1 / -1; background: rgba(239, 68, 68, 0.05); border: 1.5px solid rgba(239, 68, 68, 0.15);
+    color: #ef4444; border-radius: var(--rsm); padding: 8px 16px; font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; margin-top: 4px;
   }
-  .clear-btn:hover { background: rgba(239, 68, 68, 0.18); }
-  .clear-btn:active { transform: scale(0.98); }
+  .clear-btn:hover { background: rgba(239, 68, 68, 0.1); border-color: #ef4444; }
 
-  .filter-meta {
-    background: #0f172a; padding: 14px 40px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    display: flex; align-items: center; justify-content: space-between;
-  }
-  .filter-meta span { font-size: 12px; color: #64748b; }
-  .filter-meta strong { color: #e2e8f0; }
+  /* ── META ── */
+  .filter-meta { padding: 28px 40px 0; display: flex; align-items: center; justify-content: space-between; }
+  .fmc { font-size: 13px; color: var(--tmu); }
+  .fmc strong { color: var(--tm); font-weight: 700; }
 
-  .grid-wrap { padding: 28px 40px 48px; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+  /* ── GRID ── */
+  .grid-wrap { padding: 20px 40px 60px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
 
+  /* ── CARD ── */
   .card {
-    position: relative; background: #111827;
-    border: 1px solid rgba(255, 255, 255, 0.07); border-radius: 14px; overflow: hidden;
-    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    position: relative; background: var(--card); border: 1px solid var(--card-border);
+    border-radius: var(--rlg); overflow: hidden; box-shadow: var(--shadow);
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s, border-color 0.2s;
   }
-  .card:hover { transform: translateY(-3px); border-color: rgba(4, 120, 87, 0.34); box-shadow: 0 16px 48px rgba(0, 0, 0, 0.28); }
-
+  .card:hover { transform: translateY(-6px); box-shadow: var(--shadow-hover); border-color: rgba(44, 122, 75, 0.25); }
+  .card-accent { height: 4px; background: linear-gradient(90deg, #1A4A38, #2C7A4B, #4ade80, #2C7A4B, #1A4A38); }
+  
   .card-header {
-    background: linear-gradient(135deg, #064e3b 0%, #065f46 100%);
-    padding: 18px 18px 16px; display: flex; gap: 13px; align-items: center;
+    background: linear-gradient(135deg, #f0faf5 0%, #e6f5ed 100%);
+    border-bottom: 1px solid rgba(26, 74, 56, 0.08); padding: 18px 20px; display: flex; gap: 14px; align-items: center;
   }
-
   .avatar {
-    width: 52px; height: 52px; border-radius: 50%;
-    background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(255, 255, 255, 0.15);
+    width: 54px; height: 54px; border-radius: 14px;
+    background: linear-gradient(135deg, #1A4A38, #2C7A4B);
     display: flex; align-items: center; justify-content: center;
-    font-size: 16px; font-weight: 500; color: #fff; flex-shrink: 0;
+    font-size: 17px; font-weight: 800; color: #fff; flex-shrink: 0; box-shadow: 0 4px 14px rgba(26, 74, 56, 0.3);
   }
+  .chm { flex: 1; min-width: 0; }
+  .card-name { font-size: 16px; font-weight: 700; color: var(--tm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
+  .card-spec { font-size: 12px; color: var(--tmu); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 9px; }
+  
+  .card-badges { display: flex; gap: 5px; flex-wrap: wrap; }
+  .pill { font-size: 10px; font-weight: 700; border-radius: 999px; padding: 3px 11px; letter-spacing: 0.04em; border: 1px solid transparent; }
+  .pill-green { background: var(--sbg); color: var(--st); border-color: var(--sbo); }
+  .pill-amber { background: var(--abg); color: var(--at); border-color: var(--abo); }
+  .pill-blue { background: var(--bbg); color: var(--bt); border-color: var(--bbo); }
+  .pill-gray { background: var(--gbg); color: var(--gt); border-color: var(--gbo); }
 
-  .card-header-main { min-width: 0; flex: 1; }
-  .card-name { font-size: 15px; font-weight: 500; color: #f1f5f9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .card-spec { font-size: 12px; color: rgba(255, 255, 255, 0.62); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .card-badges { display: flex; gap: 5px; margin-top: 8px; flex-wrap: wrap; }
+  .card-body { padding: 18px 20px 20px; }
 
-  .pill { font-size: 10px; font-weight: 500; border-radius: 999px; padding: 2px 9px; letter-spacing: 0.04em; border: 1px solid transparent; }
-  .pill-green  { background: rgba(52, 211, 153, 0.15); color: #34d399;  border-color: rgba(52, 211, 153, 0.2); }
-  .pill-amber  { background: rgba(251, 191, 36, 0.12); color: #fbbf24;  border-color: rgba(251, 191, 36, 0.2); }
-  .pill-blue   { background: rgba(96, 165, 250, 0.12); color: #93c5fd;  border-color: rgba(96, 165, 250, 0.2); }
-  .pill-gray   { background: rgba(148, 163, 184, 0.12); color: #94a3b8; border-color: rgba(148, 163, 184, 0.2); }
+  /* ── STARS ── */
+  .rating-row {
+    display: flex; align-items: center; gap: 10px;
+    background: linear-gradient(135deg, #fffbeb, #fef9e7);
+    border: 1px solid #fde68a; border-radius: 10px; padding: 10px 14px; margin-bottom: 16px;
+  }
+  .stars { display: flex; gap: 1px; line-height: 1; }
+  .star-full { color: #f59e0b; font-size: 15px; }
+  .star-half { position: relative; font-size: 15px; color: #e5e7eb; display: inline-block; }
+  .star-half::before { content: '★'; color: #f59e0b; position: absolute; left: 0; top: 0; width: 55%; overflow: hidden; display: block; }
+  .star-empty { color: #d1d5db; font-size: 15px; }
+  .rating-text { font-size: 13px; font-weight: 700; color: #92400e; }
+  .rating-count { font-size: 12px; color: #b45309; }
+  .reviews-link {
+    background: none; border: 1px solid rgba(245, 158, 11, 0.3); color: #b45309;
+    font-size: 10px; font-weight: 700; border-radius: 6px; padding: 3px 8px;
+    cursor: pointer; text-transform: uppercase; letter-spacing: 0.05em; transition: all 0.2s;
+  }
+  .reviews-link:hover { background: rgba(245, 158, 11, 0.1); }
 
-  .card-body { padding: 16px 18px 18px; }
-
-  .info-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .info-row { display: flex; align-items: center; gap: 10px; }
   .info-icon {
-    width: 30px; height: 30px; border-radius: 7px;
-    background: rgba(4, 120, 87, 0.12); border: 1px solid rgba(4, 120, 87, 0.18);
-    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    width: 34px; height: 34px; border-radius: 999px;
+    background: linear-gradient(135deg, rgba(26,74,56,0.07), rgba(44,122,75,0.05));
+    border: 1px solid rgba(26,74,56,0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0;
   }
-  .info-text { min-width: 0; }
-  .info-label { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 1px; }
-  .info-val { font-size: 13px; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .info-label { font-size: 10px; font-weight: 700; color: var(--tmu); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 2px; }
+  .info-val { font-size: 13px; font-weight: 600; color: var(--tm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  
+  .card-div { height: 1px; background: linear-gradient(90deg, transparent, rgba(26,74,56,0.1), transparent); margin: 14px 0; }
+  
+  .certs { margin-bottom: 16px; }
+  .cert-label { font-size: 10px; font-weight: 700; color: var(--tmu); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 7px; }
+  .cert-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+  .cert-tag { font-size: 11px; color: var(--p1); background: rgba(26,74,56,0.06); border: 1px solid rgba(26,74,56,0.12); border-radius: 6px; padding: 3px 9px; font-weight: 500; }
+  .cert-more { color: var(--p2); font-weight: 700; }
 
-  .certs { margin-top: 4px; margin-bottom: 14px; }
-  .cert-label { font-size: 10px; color: #475569; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 5px; }
-  .cert-tags { display: flex; flex-wrap: wrap; gap: 4px; }
-  .cert-tag { font-size: 10px; color: #94a3b8; background: #1e293b; border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 5px; padding: 3px 8px; }
-  .cert-more { color: #34d399; border-color: rgba(52, 211, 153, 0.2); background: rgba(52, 211, 153, 0.08); }
-
-  .card-actions { display: flex; gap: 8px; align-items: center; }
-
-  .btn-outline, .btn-primary, .page-btn { transition: all 0.15s ease; }
-
-  .btn-outline {
-    flex: 0 0 auto; background: transparent;
-    border: 1px solid rgba(4, 120, 87, 0.35); color: #34d399;
-    border-radius: 9px; padding: 10px 14px; font-size: 12px; cursor: pointer; white-space: nowrap;
+  .card-actions { display: flex; gap: 8px; }
+  .btn-slots {
+    flex: 0 0 auto; display: flex; align-items: center; gap: 6px;
+    background: #fff; border: 1.5px solid rgba(26, 74, 56, 0.2); color: var(--p1);
+    border-radius: var(--rmd); padding: 10px 14px; font-size: 12px; font-weight: 600;
+    cursor: pointer; white-space: nowrap; transition: all 0.15s; box-shadow: 0 1px 3px rgba(26, 74, 56, 0.08);
   }
-  .btn-outline:hover:not(:disabled) { background: rgba(4, 120, 87, 0.12); }
-  .btn-outline:disabled { opacity: 0.6; cursor: not-allowed; }
-  .btn-outline-error { border-color: rgba(239, 68, 68, 0.4); color: #f87171; }
-  .btn-outline-error:hover:not(:disabled) { background: rgba(239, 68, 68, 0.08); }
+  .btn-slots:hover:not(:disabled) { background: #f0faf5; border-color: var(--p2); color: var(--p2); transform: translateY(-1px); }
+  .btn-slots:disabled { opacity: 0.6; cursor: not-allowed; }
+  .btn-slots.error { border-color: #ef4444; color: #ef4444; }
 
-  .btn-primary {
-    flex: 1; background: #047857; border: none; color: #fff;
-    border-radius: 9px; padding: 10px 0; font-size: 12px; font-weight: 500; cursor: pointer;
+  .btn-book {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+    background: linear-gradient(135deg, #1A4A38 0%, #2C7A4B 100%);
+    border: none; color: #d1fae5; border-radius: var(--rmd); padding: 11px 0;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    box-shadow: 0 4px 16px rgba(26, 74, 56, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    transition: all 0.2s;
   }
-  .btn-primary:hover { background: #065f46; }
-  .btn-primary.full {
-    width: 100%; margin-top: 10px; padding: 11px 0; border-radius: 10px; font-weight: 600;
-    display: flex; justify-content: center; align-items: center; text-align: center; line-height: 1;
-  }
+  .btn-book:hover { background: linear-gradient(135deg, #2C7A4B 0%, #1a5e40 100%); box-shadow: 0 6px 24px rgba(26, 74, 56, 0.4); transform: translateY(-1px); }
+  .btn-book:active { transform: scale(0.98); }
 
-  /* Slots popover */
-  .backdrop { position: fixed; inset: 0; z-index: 10; }
-
+  /* ── SLOTS POPOVER ── */
+  .backdrop { position: fixed; inset: 0; z-index: 100; background: rgba(26, 74, 56, 0.1); backdrop-filter: blur(4px); }
   .slots-panel {
-    position: absolute; top: 10px; left: 10px; right: 10px; z-index: 20;
-    background: #1a2744;
-    border: 1px solid rgba(4, 120, 87, 0.3);
-    border-radius: 12px;
-    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45);
-    overflow: hidden;
+    position: absolute; top: 10px; left: 10px; right: 10px; z-index: 110;
+    background: #ffffff; border: 1px solid var(--p2); border-radius: 16px;
+    box-shadow: 0 24px 64px rgba(26, 74, 56, 0.25); overflow: hidden;
   }
-
   .slots-title {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 11px 14px 10px;
-    border-bottom: 1px solid rgba(4, 120, 87, 0.18);
-    background: rgba(4, 120, 87, 0.1);
-    font-size: 10px; font-weight: 700; color: #34d399;
-    text-transform: uppercase; letter-spacing: 0.1em;
+    padding: 14px 18px; background: var(--bg); border-bottom: 1px solid rgba(26, 74, 56, 0.1);
+    font-size: 11px; font-weight: 800; color: var(--p1); text-transform: uppercase; letter-spacing: 0.1em;
   }
-
-  .slots-close {
-    background: none; border: none; color: #475569; cursor: pointer;
-    font-size: 15px; line-height: 1; padding: 0; transition: color 0.12s;
-  }
-  .slots-close:hover { color: #94a3b8; }
-
-  .slots-scroll {
-    max-height: 240px; overflow-y: auto;
-    padding: 8px 10px 10px;
-    display: flex; flex-direction: column; gap: 2px;
-    scrollbar-width: thin; scrollbar-color: rgba(4, 120, 87, 0.3) transparent;
-  }
-  .slots-scroll::-webkit-scrollbar { width: 4px; }
-  .slots-scroll::-webkit-scrollbar-thumb { background: rgba(4, 120, 87, 0.3); border-radius: 4px; }
-
-  .slots-empty { font-size: 12px; color: #475569; text-align: center; padding: 16px 0; }
-
-  .slots-date-group { margin-bottom: 6px; }
-  .slots-date-group:last-child { margin-bottom: 0; }
-
-  .slots-date-header {
-    display: flex; align-items: center; gap: 6px;
-    font-size: 10px; font-weight: 700; color: #6ee7b7;
-    text-transform: uppercase; letter-spacing: 0.1em; padding: 4px 4px 5px;
-  }
-
-  .slots-date-dot { width: 5px; height: 5px; border-radius: 50%; background: #34d399; flex-shrink: 0; }
-
+  .slots-close { background: none; border: none; color: var(--tmu); cursor: pointer; font-size: 18px; padding: 4px; }
+  .slots-scroll { max-height: 300px; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 4px; }
+  .slots-date-group { margin-bottom: 12px; }
+  .slots-date-header { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; color: var(--p2); text-transform: uppercase; margin-bottom: 6px; }
+  .slots-date-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--p3); }
   .slot-row {
     display: flex; align-items: center; justify-content: space-between;
-    background: rgba(4, 120, 87, 0.07); border: 1px solid rgba(4, 120, 87, 0.14);
-    border-radius: 7px; padding: 6px 10px; margin-bottom: 4px;
+    background: #f8fdfa; border: 1px solid rgba(26, 74, 56, 0.08); border-radius: 8px; padding: 8px 12px; margin-bottom: 4px;
   }
-  .slot-row:last-child { margin-bottom: 0; }
-  .slot-time { font-size: 12px; color: #a7f3d0; font-weight: 600; }
+  .slot-time { font-size: 13px; font-weight: 700; color: var(--p1); }
+  .slot-status-pill { font-size: 9px; font-weight: 800; text-transform: uppercase; padding: 2px 8px; border-radius: 99px; }
+  .slot-status-available { background: var(--sbg); color: var(--st); }
+  .slot-status-booked { background: var(--abg); color: var(--at); }
+  .slots-empty { text-align: center; padding: 32px; color: var(--tmu); font-size: 13px; }
 
-  .slot-status-pill {
-    font-size: 9px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.08em; border-radius: 99px; padding: 2px 8px; border: 1px solid transparent;
-  }
-  .slot-status-available { background: rgba(52, 211, 153, 0.12); color: #34d399; border-color: rgba(52, 211, 153, 0.22); }
-  .slot-status-booked { background: rgba(251, 191, 36, 0.12); color: #fbbf24; border-color: rgba(251, 191, 36, 0.22); }
-  .slot-status-pill:not(.slot-status-available):not(.slot-status-booked) {
-    background: rgba(148, 163, 184, 0.1); color: #94a3b8; border-color: rgba(148, 163, 184, 0.2);
-  }
-
-  /* Empty / Error */
-  .empty { text-align: center; padding: 72px 20px 40px; max-width: 420px; margin: 0 auto; }
-  .empty-icon {
-    width: 60px; height: 60px; border-radius: 50%;
-    background: rgba(4, 120, 87, 0.12); border: 1px solid rgba(4, 120, 87, 0.2);
-    display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;
-  }
-  .empty h3 { font-size: 18px; font-weight: 500; color: #e2e8f0; margin: 0 0 8px; }
-  .empty p { font-size: 13px; color: #64748b; margin: 0 0 14px; }
-
-  .pagination { display: flex; gap: 6px; justify-content: center; padding: 0 40px 40px; flex-wrap: wrap; }
+  /* ── PAGINATION ── */
+  .pagination { display: flex; gap: 6px; justify-content: center; padding: 0 40px 48px; flex-wrap: wrap; }
   .page-btn {
-    padding: 8px 14px; border-radius: 8px; font-size: 12px; cursor: pointer;
-    border: 1px solid rgba(255, 255, 255, 0.1); background: #111827; color: #94a3b8;
+    padding: 8px 15px; border-radius: var(--rsm); font-size: 12px; font-weight: 600;
+    cursor: pointer; background: #fff; border: 1.5px solid rgba(26, 74, 56, 0.15);
+    color: var(--tmu); box-shadow: 0 1px 3px rgba(26, 74, 56, 0.06); transition: all 0.15s;
   }
-  .page-btn:hover:not(:disabled) { background: #1e293b; color: #e2e8f0; }
-  .page-btn.active { background: #047857; color: #fff; border-color: #047857; }
-  .page-btn:disabled { opacity: 0.3; cursor: default; }
+  .page-btn:hover:not(:disabled) { background: #f0faf5; border-color: var(--p2); color: var(--p1); }
+  .page-btn.active { background: var(--hdr-bg); border-color: transparent; color: #fff; box-shadow: 0 3px 12px rgba(26, 74, 56, 0.3); }
+  .page-btn:disabled { opacity: 0.35; cursor: default; }
 
-  .footer { text-align: center; padding: 24px 40px; border-top: 1px solid rgba(255, 255, 255, 0.05); font-size: 11px; color: #334155; }
+  footer { text-align: center; padding: 24px 40px; border-top: 1px solid rgba(26, 74, 56, 0.08); font-size: 11px; color: var(--tfa); letter-spacing: 0.03em; }
 
-  .loading-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 14px; }
-  .loading-wrap p { margin: 0; color: #94a3b8; font-size: 13px; font-weight: 500; }
-  .spinner { width: 52px; height: 52px; border-radius: 50%; border: 4px solid rgba(52, 211, 153, 0.18); border-top-color: #34d399; animation: spin 0.9s linear infinite; }
-
-  .error-wrap { display: flex; justify-content: center; padding: 32px 20px 60px; }
-  .error-card { width: 100%; max-width: 380px; background: #111827; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 18px; padding: 28px; text-align: center; box-shadow: 0 18px 44px rgba(0, 0, 0, 0.3); }
-  .error-icon { width: 64px; height: 64px; border-radius: 999px; background: rgba(248, 113, 113, 0.08); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; border: 1px solid rgba(248, 113, 113, 0.12); }
-  .error-card h2 { margin: 0 0 8px; font-size: 22px; font-weight: 600; color: #f8fafc; }
-  .error-card p { margin: 0 0 16px; font-size: 13px; color: #94a3b8; line-height: 1.6; }
-
+  /* ── UTILS ── */
+  .loading-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 16px; background: var(--bg); }
+  .spinner { width: 48px; height: 48px; border: 4px solid var(--sbg); border-top-color: var(--p2); border-radius: 50%; animation: spin 1s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  @media (max-width: 900px) {
-    .hero-image { width: 100%; opacity: 0.08; }
-    .hero-overlay { background: linear-gradient(to right, #0f172a 0%, rgba(15, 23, 42, 0.92) 62%, rgba(4, 120, 87, 0.08) 100%); }
-  }
+  .empty { text-align: center; padding: 80px 20px; }
+  .empty-icon { width: 64px; height: 64px; background: var(--bg2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+  .empty h3 { color: var(--p1); margin-bottom: 8px; }
+  .btn-primary.full { width: 100%; max-width: 200px; margin: 20px auto 0; display: block; }
 
-  @media (max-width: 768px) {
-    .hero, .filters-bar, .filter-meta, .grid-wrap, .pagination, .footer { padding-left: 16px; padding-right: 16px; }
-    .hero { padding-top: 32px; padding-bottom: 28px; }
-    .grid { grid-template-columns: 1fr; }
-    .filter-date, .small, .search { width: 100%; }
-    .clear-btn { width: 100%; }
-    .card-actions { flex-direction: column; align-items: stretch; }
-    .btn-outline { width: 100%; }
-    .navbar { padding-left: 16px; padding-right: 16px; }
-    .filters-bar { flex-direction: column; gap: 10px; }
-    .pagination { padding-left: 16px; padding-right: 16px; }
-    .hero h1 { font-size: clamp(26px, 7vw, 40px); }
+  @media(max-width:1400px){
+    .grid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+  }
+  @media(max-width:1100px){
+    .filters-bar{grid-template-columns:repeat(3,1fr)}
+    .filters-wrap{margin:-52px 24px 0}
+    .grid{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))}
+  }
+  @media(max-width:768px){
+    .hero{padding:36px 20px 100px}
+    .hero h1{font-size:28px;letter-spacing:-0.5px}
+    .hero p{font-size:13px}
+    .hero-stats{gap:16px}
+    .stat-val{font-size:22px}
+    .filters-wrap{margin:-48px 16px 0}
+    .filters-bar{grid-template-columns:1fr 1fr;padding:16px;gap:10px;border-radius:16px}
+    .filter-meta{padding:20px 16px 0}
+    .grid-wrap{padding:16px 16px 40px}
+    .grid{grid-template-columns:1fr;gap:16px}
+    .card-actions{flex-direction:column}
+    .btn-slots{width:100%;justify-content:center}
+    .btn-book{width:100%}
+    .pagination{padding:0 16px 32px;gap:4px}
+    .page-btn{padding:6px 12px;font-size:11px}
+    footer{padding:20px 16px;font-size:10px}
+  }
+  @media(max-width:480px){
+    .hero{padding:28px 16px 90px}
+    .hero h1{font-size:24px}
+    .badge{padding:4px 12px}
+    .badge span{font-size:10px}
+    .hero-stats{gap:12px}
+    .stat-val{font-size:18px}
+    .stat-lbl{font-size:9px}
+    .stat-divider{height:28px}
+    .filters-wrap{margin:-44px 12px 0}
+    .filters-bar{grid-template-columns:1fr;padding:14px;gap:8px;border-radius:14px}
+    .fg label{font-size:9px}
+    .fg input,.fg select{padding:8px 10px;font-size:12px}
+    .filter-meta{padding:16px 12px 0}
+    .fmc{font-size:12px}
+    .grid-wrap{padding:12px 12px 32px}
+    .card-header{padding:14px 16px}
+    .avatar{width:44px;height:44px;border-radius:12px;font-size:14px}
+    .card-name{font-size:14px}
+    .card-spec{font-size:11px}
+    .card-body{padding:14px 16px 16px}
+    .info-grid{grid-template-columns:1fr;gap:8px}
+    .info-icon{width:28px;height:28px}
+    .rating-row{padding:8px 10px;gap:6px}
+    .slots-panel{border-radius:12px}
+  }
+  @media(max-width:360px){
+    .hero{padding:24px 12px 80px}
+    .hero h1{font-size:20px}
+    .hero p{font-size:12px;margin-bottom:20px}
+    .filters-wrap{margin:-40px 8px 0}
+    .grid-wrap{padding:10px 8px 28px}
+    .card{border-radius:14px}
   }
 `;

@@ -54,11 +54,13 @@ export default function AuditLogFiltersPanel({ onFilterChange, isLoading }: Audi
             marginBottom: 24,
             boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
         }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-                <span style={{ fontSize: 18 }}>🗓️</span>
-                <h3 style={{ fontWeight: 700, fontSize: 16, color: '#1e293b', margin: 0 }}>
-                    Filter by Date Range
-                </h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 18 }}>🗓️</span>
+                    <h3 style={{ fontWeight: 700, fontSize: 16, color: '#1e293b', margin: 0 }}>
+                        Filter Actions By Date
+                    </h3>
+                </div>
             </div>
 
             <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end', flexWrap: 'wrap' }}>
@@ -105,16 +107,16 @@ export default function AuditLogFiltersPanel({ onFilterChange, isLoading }: Audi
                     />
                 </div>
 
-                {/* Buttons */}
-                <div style={{ display: 'flex', gap: 8 }}>
+                {/* Buttons pulled to right */}
+                <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
                     <button
                         onClick={handleApply}
                         disabled={isLoading}
                         style={{
-                            backgroundColor: '#1e293b',
+                            backgroundColor: '#1a4a38',
                             color: '#fff',
                             fontWeight: 700,
-                            padding: '9px 20px',
+                            padding: '9px 24px',
                             borderRadius: 8,
                             border: 'none',
                             cursor: isLoading ? 'not-allowed' : 'pointer',
@@ -122,7 +124,7 @@ export default function AuditLogFiltersPanel({ onFilterChange, isLoading }: Audi
                             fontSize: 14,
                         }}
                     >
-                        {isLoading ? 'Loading...' : 'Apply'}
+                        {isLoading ? 'Loading...' : 'Search Logs'}
                     </button>
                     <button
                         onClick={handleClear}

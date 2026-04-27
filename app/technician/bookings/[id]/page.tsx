@@ -5,8 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { getToken, getRole } from "@/services/authService";
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || "https://www.rmis.space/api";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5050";
 
 interface BookingDetail {
   id: number;
@@ -134,7 +133,7 @@ export default function BookingDetailPage() {
     const token = getToken();
     const role = getRole();
     if (!token) {
-      router.push("/");
+      router.push("/login");
       return;
     }
     if (role !== "ROLE_TECHNICIAN" && role !== "TECHNICIAN") {
@@ -289,7 +288,7 @@ export default function BookingDetailPage() {
             style={s.signOutBtn}
             onClick={() => {
               localStorage.removeItem("accessToken");
-              router.push("/");
+              router.push("/login");
             }}
           >
             Sign Out

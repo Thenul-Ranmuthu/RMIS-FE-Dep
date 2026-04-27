@@ -131,7 +131,7 @@ export default function CompanyDashboard() {
       localStorage.getItem("accessToken") || sessionStorage.getItem("accessToken");
 
     if (!raw || !token) {
-      router.push("/");
+      router.push("/login");
       return;
     }
 
@@ -139,7 +139,7 @@ export default function CompanyDashboard() {
     try {
       parsed = JSON.parse(raw);
     } catch {
-      router.push("/");
+      router.push("/login");
       return;
     }
 
@@ -195,7 +195,7 @@ export default function CompanyDashboard() {
       localStorage.removeItem(key);
       sessionStorage.removeItem(key);
     });
-    router.push("/");
+    router.push("/login");
   };
 
   // ── After quota added ────────────────────────────────────────

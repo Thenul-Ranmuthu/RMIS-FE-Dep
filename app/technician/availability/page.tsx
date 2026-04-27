@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getToken, getRole } from "@/services/authService";
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || "https://www.rmis.space/api";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5050";
 const PRIMARY = "#047857";
 const HERO_IMAGE = "/Gemini_Generated_Image_3kc8133kc8133kc8.png";
 
@@ -131,7 +130,7 @@ export default function TechnicianAvailabilityPage() {
     const role = getRole();
 
     if (!token) {
-      router.push("/");
+      router.push("/login");
       return;
     }
 
@@ -341,7 +340,7 @@ export default function TechnicianAvailabilityPage() {
           <button
             onClick={() => {
               localStorage.removeItem("accessToken");
-              router.push("/");
+              router.push("/login");
             }}
             className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-rose-600 shadow-sm transition hover:border-rose-200 hover:bg-rose-50"
           >

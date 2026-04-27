@@ -11,7 +11,7 @@ export default function CompanyPendingPage() {
   useEffect(() => {
     const raw = localStorage.getItem("user") || sessionStorage.getItem("user");
     if (!raw) {
-      router.push("/");
+      router.push("/login");
       return;
     }
     try {
@@ -24,7 +24,7 @@ export default function CompanyPendingPage() {
       setStatus(parsed.status ?? "PENDING");
       setEmail(parsed.email ?? "");
     } catch {
-      router.push("/");
+      router.push("/login");
     }
   }, [router]);
 
@@ -33,7 +33,7 @@ export default function CompanyPendingPage() {
       localStorage.removeItem(key);
       sessionStorage.removeItem(key);
     });
-    router.push("/");
+    router.push("/login");
   };
 
   const isPending = status.toUpperCase() === "PENDING";
@@ -54,9 +54,8 @@ export default function CompanyPendingPage() {
         {/* Icon */}
         <div className="flex justify-center mb-6">
           <div
-            className={`rounded-full p-5 ${
-              isPending ? "bg-amber-100" : "bg-red-100"
-            }`}
+            className={`rounded-full p-5 ${isPending ? "bg-amber-100" : "bg-red-100"
+              }`}
           >
             {isPending ? (
               <svg
@@ -94,16 +93,14 @@ export default function CompanyPendingPage() {
 
         {/* Status pill */}
         <span
-          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-4 ${
-            isPending
+          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-4 ${isPending
               ? "bg-amber-100 text-amber-700"
               : "bg-red-100 text-red-600"
-          }`}
+            }`}
         >
           <span
-            className={`h-1.5 w-1.5 rounded-full ${
-              isPending ? "bg-amber-500" : "bg-red-500"
-            }`}
+            className={`h-1.5 w-1.5 rounded-full ${isPending ? "bg-amber-500" : "bg-red-500"
+              }`}
           />
           {status}
         </span>
@@ -129,17 +126,15 @@ export default function CompanyPendingPage() {
 
         {/* Info box */}
         <div
-          className={`flex items-start gap-3 p-4 rounded-xl text-left mb-8 ${
-            isPending
+          className={`flex items-start gap-3 p-4 rounded-xl text-left mb-8 ${isPending
               ? "bg-amber-50 border border-amber-200"
               : "bg-red-50 border border-red-200"
-          }`}
+            }`}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className={`h-4 w-4 mt-0.5 flex-shrink-0 ${
-              isPending ? "text-amber-500" : "text-red-500"
-            }`}
+            className={`h-4 w-4 mt-0.5 flex-shrink-0 ${isPending ? "text-amber-500" : "text-red-500"
+              }`}
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -152,9 +147,8 @@ export default function CompanyPendingPage() {
             />
           </svg>
           <p
-            className={`text-xs leading-relaxed ${
-              isPending ? "text-amber-800" : "text-red-700"
-            }`}
+            className={`text-xs leading-relaxed ${isPending ? "text-amber-800" : "text-red-700"
+              }`}
           >
             {isPending
               ? "Once approved, you can log in again to access the Company Portal and start managing your quota requests."

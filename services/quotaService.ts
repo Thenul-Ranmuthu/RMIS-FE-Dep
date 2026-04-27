@@ -7,8 +7,7 @@ import {
 } from "@/types/quota";
 import { getToken } from "@/services/authService";
 
-const BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://www.rmis.space/api";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5050";
 
 // ── Helper: build auth headers ─────────────────────────────────────────────
 const authHeaders = (token?: string | null) => ({
@@ -44,6 +43,7 @@ export interface QuotaListResponse {
 export interface AddQuotaPayload {
   companyEmail: string;
   requestedQuota: number;
+  requestReason: string;
 }
 
 // ─── Company-side response parser ─────────────────────────────────────────

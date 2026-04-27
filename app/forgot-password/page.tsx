@@ -3,8 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://www.rmis.space/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5050";
 
 type Status = "idle" | "loading" | "success" | "error";
 
@@ -121,7 +120,7 @@ export default function ForgotPasswordPage() {
               Check your spam folder if you don't see the email.
             </p>
             <Link
-              href="/"
+              href="/login"
               className="w-full inline-block bg-emerald-600 hover:bg-emerald-700 text-white py-3.5 rounded-xl text-sm font-bold text-center shadow-lg shadow-emerald-200 transition-all duration-200"
             >
               Back to Sign In
@@ -251,7 +250,7 @@ export default function ForgotPasswordPage() {
               <p className="text-center text-sm text-gray-500 mt-6">
                 Remember your password?{" "}
                 <Link
-                  href="/"
+                  href="/login"
                   className="text-emerald-600 font-semibold hover:text-emerald-700 transition"
                 >
                   Back to Sign In

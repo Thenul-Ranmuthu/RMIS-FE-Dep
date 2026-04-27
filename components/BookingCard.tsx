@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { ServiceTicketResponse } from "@/services/serviceTicketService";
+import { SubmitRatingModal } from "./SubmitRatingModal";
 
 const STATUS_STYLES: Record<string, string> = {
     PENDING: "bg-amber-100 text-amber-700 border-amber-200",
@@ -9,98 +11,143 @@ const STATUS_STYLES: Record<string, string> = {
 
 interface BookingCardProps {
     ticket: ServiceTicketResponse;
-    onViewDetails: (ticketNumber: string) => void;
     onCancel: (id: number) => void;
+    onRatingSuccess: () => void;
 }
 
 /**
  * SRP: This component is only responsible for rendering a single booking card.
  * OCP: The status styles are defined in a map, making it easy to add new statuses.
  */
-export function BookingCard({ ticket, onViewDetails, onCancel }: BookingCardProps) {
+export function BookingCard({ ticket, onCancel, onRatingSuccess }: BookingCardProps) {
+    const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
+    
     const statusStyle = STATUS_STYLES[ticket.status.toUpperCase()] || "bg-gray-100 text-gray-700 border-gray-200";
     const isCancelable = ticket.status.toUpperCase() === "PENDING";
+    const isCompleted = ticket.status.toUpperCase() === "COMPLETED";
 
     return (
-        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-            <div className="absolute top-0 left-0 w-1 h-full bg-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity" />
-            
-            <div className="flex flex-col lg:flex-row justify-between gap-6">
-                <div className="space-y-4 flex-1">
-                    <div className="flex flex-wrap items-center gap-3">
-                        <span className="text-xs font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md">
-                            ID: {ticket.ticketNumber}
-                        </span>
-                        <div className={`text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full border ${statusStyle}`}>
-                            {ticket.status.replace(/_/g, ' ')}
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <h3 className="text-xl font-black text-gray-900">{ticket.serviceType}</h3>
-                        <p className="text-gray-600 mt-1 line-clamp-2 italic">
-                            "{ticket.description}"
-                        </p>
-                        {ticket.status.toUpperCase() === "CANCELLED" && ticket.cancellationReason && (
-                            <div className="mt-3 bg-red-50 border border-red-100 p-3 rounded-xl">
-                                <p className="text-[10px] uppercase font-bold text-red-400 tracking-wider mb-1">Cancellation Reason</p>
-                                <p className="text-red-700 text-sm font-medium italic">"{ticket.cancellationReason}"</p>
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                        <div className="flex items-center gap-3">
-                            <div className="bg-gray-100 p-2 rounded-xl text-gray-500 shrink-0">
-                                <span className="material-symbols-outlined text-xl">person</span>
-                            </div>
-                            <div>
-                                <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Technician</p>
-                                <p className="text-gray-900 font-bold">{ticket.technicianName}</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <div className="bg-gray-100 p-2 rounded-xl text-gray-500 shrink-0">
-                                <span className="material-symbols-outlined text-xl">event</span>
-                            </div>
-                            <div>
-                                <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Scheduled Date</p>
-                                <p className="text-gray-900 font-bold">
-                                    {new Date(ticket.scheduledDate).toLocaleDateString('en-US', { 
-                                        month: 'long', day: 'numeric', year: 'numeric' 
-                                    })}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="lg:w-48 lg:border-l lg:pl-6 flex flex-col justify-center gap-3 border-t lg:border-t-0 pt-4 lg:pt-0">
-                    <div className="flex items-center gap-2 text-gray-500 mb-1">
-                        <span className="material-symbols-outlined text-lg">schedule</span>
-                        <span className="text-sm font-bold tracking-tight">
-                            {ticket.scheduledStartTime && ticket.scheduledEndTime 
-                                ? `${ticket.scheduledStartTime.substring(0, 5)} - ${ticket.scheduledEndTime.substring(0, 5)}`
-                                : "Technician no longer available"
-                            }
-                        </span>
-                    </div>
-                    <button 
-                        className="w-full bg-gray-50 hover:bg-gray-100 text-gray-900 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition border border-gray-200"
-                        onClick={() => onViewDetails(ticket.ticketNumber)}
-                    >
-                        View Details
-                    </button>
-                    {isCancelable && (
-                        <button 
-                            className="w-full bg-red-50 hover:bg-red-100 text-red-600 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition border border-red-100"
-                            onClick={() => onCancel(ticket.id)}
-                        >
-                            Cancel Booking
-                        </button>
-                    )}
+        <div className="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-lg transition-all duration-300 relative overflow-hidden group">
+            {/* Top Badge Row */}
+            <div className="flex flex-wrap items-center gap-3 mb-4">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100/50">
+                    ID: {ticket.ticketNumber}
+                </span>
+                <div className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full border ${statusStyle}`}>
+                    {ticket.status.replace(/_/g, ' ')}
                 </div>
             </div>
+
+            {/* Title & Description */}
+            <div className="mb-6">
+                <h3 className="text-lg sm:text-2xl font-black text-slate-800 tracking-tight">{ticket.serviceType}</h3>
+                <p className="text-slate-500 mt-2 italic font-medium">
+                    {ticket.description ? `"${ticket.description}"` : '"No notes provided"'}
+                </p>
+                {ticket.status.toUpperCase() === "CANCELLED" && ticket.cancellationReason && (
+                    <div className="mt-4 bg-red-50/50 border border-red-100 p-4 rounded-2xl">
+                        <p className="text-[10px] uppercase font-bold text-red-400 tracking-wider mb-1">Cancellation Reason</p>
+                        <p className="text-red-700 text-sm font-medium italic">"{ticket.cancellationReason}"</p>
+                    </div>
+                )}
+            </div>
+
+            {/* Middle Section: 3-Column Info Bar */}
+            <div className="bg-slate-50/50 border border-slate-100 rounded-xl sm:rounded-2xl p-3 sm:p-4 mb-4 sm:mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 relative">
+                {/* Technician */}
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 border-2 border-white shadow-sm overflow-hidden">
+                        <span className="material-symbols-outlined text-2xl">account_circle</span>
+                    </div>
+                    <div>
+                        <p className="text-[9px] uppercase font-black text-slate-400 tracking-wider">Technician</p>
+                        <p className="text-slate-800 font-bold text-sm leading-tight">{ticket.technicianName || "Expert Technician"}</p>
+                    </div>
+                </div>
+
+                {/* Date */}
+                <div className="flex items-center gap-4 sm:border-l sm:border-slate-200 sm:pl-6">
+                    <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-500 border-2 border-white shadow-sm">
+                        <span className="material-symbols-outlined text-2xl">calendar_today</span>
+                    </div>
+                    <div>
+                        <p className="text-[9px] uppercase font-black text-slate-400 tracking-wider">Scheduled Date</p>
+                        <p className="text-slate-800 font-bold text-sm leading-tight">
+                            {new Date(ticket.scheduledDate).toLocaleDateString('en-US', { 
+                                month: 'long', day: 'numeric', year: 'numeric' 
+                            })}
+                        </p>
+                    </div>
+                </div>
+
+                {/* Time */}
+                <div className="flex items-center gap-4 sm:border-l sm:border-slate-200 sm:pl-6">
+                    <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 border-2 border-white shadow-sm">
+                        <span className="material-symbols-outlined text-2xl">schedule</span>
+                    </div>
+                    <div>
+                        <p className="text-[9px] uppercase font-black text-slate-400 tracking-wider">Time</p>
+                        <p className="text-slate-800 font-bold text-sm leading-tight">
+                            {ticket.scheduledStartTime && ticket.scheduledEndTime 
+                                ? `${ticket.scheduledStartTime.substring(0, 5)} - ${ticket.scheduledEndTime.substring(0, 5)}`
+                                : "N/A"
+                            }
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Bottom Section */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+                {isCompleted ? (
+                    <div className="flex-1 bg-white border border-slate-100 rounded-xl sm:rounded-2xl p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm group/rating">
+                        <div className="flex flex-col gap-1">
+                            <div className="flex gap-1 text-emerald-400">
+                                {[1, 2, 3, 4, 5].map((s) => (
+                                    <span key={s} className="material-symbols-outlined text-xl">
+                                        {ticket.rated ? "star" : "star_outline"}
+                                    </span>
+                                ))}
+                            </div>
+                            <p className="text-[11px] text-slate-400 font-medium">
+                                How was the service provided by the technician?
+                            </p>
+                        </div>
+                        <button 
+                            className={`px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest transition-all flex items-center gap-2 border shadow-sm ${
+                                ticket.rated 
+                                ? "bg-slate-50 text-slate-400 border-slate-100 cursor-not-allowed" 
+                                : "bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-100 hover:scale-105 active:scale-95"
+                            }`}
+                            onClick={() => !ticket.rated && setIsRatingModalOpen(true)}
+                            disabled={ticket.rated}
+                        >
+                            <span className="material-symbols-outlined text-sm">
+                                {ticket.rated ? 'check_circle' : 'star'}
+                            </span>
+                            {ticket.rated ? 'Already Rated' : 'Rate Technician'}
+                        </button>
+                    </div>
+                ) : isCancelable ? (
+                    <button 
+                        className="w-full bg-red-50 hover:bg-red-100 text-red-600 py-3.5 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all border border-red-100 active:scale-[0.98]"
+                        onClick={() => onCancel(ticket.id)}
+                    >
+                        Cancel Booking
+                    </button>
+                ) : null}
+            </div>
+            {isRatingModalOpen && (
+                <SubmitRatingModal 
+                    ticketId={ticket.id}
+                    technicianName={ticket.technicianName}
+                    onClose={() => setIsRatingModalOpen(false)}
+                    onSuccess={() => {
+                        setIsRatingModalOpen(false);
+                        onRatingSuccess();
+                    }}
+                />
+            )}
         </div>
     );
 }

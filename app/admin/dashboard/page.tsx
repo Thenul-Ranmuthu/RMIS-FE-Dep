@@ -1,178 +1,167 @@
-// RMIS-FE/app/admin/dashboard/page.tsx
-
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { getToken, getRole } from '@/services/authService';
-import { getAuditLogs } from '@/services/auditLogService';
-import { AuditLog, AuditLogFilters } from '@/types/auditLog';
-import AuditLogTable from '@/components/audit-log/AuditLogTable';
-import AuditLogFiltersPanel from '@/components/audit-log/AuditLogFilters';
-import UnauthorisedMessage from '@/components/audit-log/UnauthorisedMessage';
 import Link from 'next/link';
-
-const getDefaultFilters = (): AuditLogFilters => {
-    const to = new Date();
-    const from = new Date();
-    from.setDate(from.getDate() - 30);
-    return {
-        from: from.toISOString().split('T')[0],
-        to: to.toISOString().split('T')[0],
-    };
-};
+import { getAuditLogs } from '@/services/auditLogService';
+import { AuditLog } from '@/types/auditLog';
 
 export default function AdminDashboardPage() {
-    const router = useRouter();
-    const [data, setData] = useState<AuditLog[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isUnauthorised, setIsUnauthorised] = useState(false);
-    const [filters, setFilters] = useState<AuditLogFilters>(getDefaultFilters());
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        const token = getToken();
-        const role = getRole();
-        if (!token) { router.push('/admin/auth/login'); return; }
-        if (role !== 'ADMIN') { setIsUnauthorised(true); return; }
-    }, []);
-
-    useEffect(() => {
-        const load = async () => {
-            setIsLoading(true);
-            try {
-                const result = await getAuditLogs(filters);
-                setData(result);
-            } catch (err: any) {
-                if (err?.status === 401 || err?.status === 403) setIsUnauthorised(true);
-                else console.error(err);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        load();
-    }, [filters]);
-
-    const handleFilterChange = (newFilters: AuditLogFilters) => setFilters(newFilters);
-
-    const handleLogout = () => {
-        localStorage.removeItem('accessToken');
-        sessionStorage.removeItem('accessToken');
-        document.cookie = "accessToken=; path=/; max-age=0";
-        router.push('/ministry');
+  useEffect(() => {
+    const load = async () => {
+      setIsLoading(true);
+      try {
+        const result = await getAuditLogs({ from: '', to: '' });
+        setAuditLogs(result);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
     };
+    load();
+  }, []);
 
-    const approvedCount = data.filter(l => l.action_type === 'APPROVED').length;
-    const rejectedCount = data.filter(l => l.action_type === 'REJECTED').length;
+  const approvedCount = auditLogs.filter(l => l.action_type === 'APPROVED').length;
+  const rejectedCount = auditLogs.filter(l => l.action_type === 'REJECTED').length;
 
-    if (isUnauthorised) return <UnauthorisedMessage />;
-
-    return (
-        <div className="flex min-h-screen bg-slate-50">
-
-            {/* Mobile overlay */}
-            {sidebarOpen && (
-                <div
-                    className="fixed inset-0 bg-black/50 z-20 lg:hidden"
-                    onClick={() => setSidebarOpen(false)}
-                />
-            )}
-
-            {/* Sidebar */}
-            <aside className={`
-                fixed lg:sticky top-0 h-screen z-30 lg:z-auto
-                w-64 bg-[#0f172a] flex flex-col flex-shrink-0
-                transition-transform duration-300 ease-in-out
-                ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-            `}>
-                <div className="p-5 border-b border-white/10">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-xl flex-shrink-0">
-                            🛡️
-                        </div>
-                        <div>
-                            <p className="text-white font-bold text-sm leading-tight">Ministry of Environment</p>
-                            <p className="text-white/40 text-xs font-medium">Admin Portal</p>
-                        </div>
-                    </div>
-                </div>
-
-                <nav className="flex-1 p-3">
-                    <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest px-2 py-2">Administration</p>
-                    <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-white/10 text-white font-semibold text-sm mt-1 cursor-pointer">
-                        <span>📋</span> Audit Logs
-                    </div>
-                </nav>
-
-                <div className="p-3 border-t border-white/10">
-                    <button
-                        onClick={handleLogout}
-                        className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-white/50 hover:bg-red-500/20 hover:text-red-300 font-semibold text-sm transition-colors"
-                    >
-                        <span>🚪</span> Logout
-                    </button>
-                </div>
-            </aside>
-
-            {/* Main */}
-            <main className="flex-1 overflow-y-auto">
-                {/* Mobile top bar */}
-                <div className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 px-4 py-3 flex items-center gap-3 lg:hidden">
-                    <button
-                        onClick={() => setSidebarOpen(true)}
-                        className="p-2 rounded-lg hover:bg-slate-100 transition"
-                    >
-                        <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                        </svg>
-                    </button>
-                    <span className="font-bold text-slate-800 text-sm">Audit Log</span>
-                </div>
-
-                <div className="p-4 sm:p-6 lg:p-8">
-                    {/* Page title */}
-                    <div className="mb-6 hidden lg:block">
-                        <h1 className="text-2xl font-black text-slate-900">Audit Log</h1>
-                        <p className="text-slate-500 text-sm mt-1">Track all officer approval and rejection actions on quota requests.</p>
-                    </div>
-
-                    {/* Stats cards */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                        {[
-                            { icon: '📋', label: 'Total Actions', value: data.length, bg: 'bg-white border-slate-200', labelColor: 'text-slate-400' },
-                            { icon: '✅', label: 'Approved', value: approvedCount, bg: 'bg-green-50 border-green-200', labelColor: 'text-green-600' },
-                            { icon: '❌', label: 'Rejected', value: rejectedCount, bg: 'bg-red-50 border-red-200', labelColor: 'text-red-500' },
-                        ].map((card) => (
-                            <div key={card.label} className={`${card.bg} border rounded-xl p-4 flex items-center gap-3`}>
-                                <div className="w-11 h-11 rounded-full bg-slate-100 flex items-center justify-center text-xl flex-shrink-0">{card.icon}</div>
-                                <div>
-                                    <p className={`text-xs font-bold uppercase tracking-wide ${card.labelColor}`}>{card.label}</p>
-                                    <p className="text-2xl font-black text-slate-900">{isLoading ? '—' : card.value}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Filters */}
-                    <AuditLogFiltersPanel onFilterChange={handleFilterChange} isLoading={isLoading} />
-
-                    {/* Table */}
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                        <div className="overflow-x-auto">
-                            <AuditLogTable data={data} isLoading={isLoading} />
-                        </div>
-                    </div>
-
-                    {/* Footer */}
-                    <footer className="mt-10 pt-5 border-t border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-3">
-                        <p className="text-slate-400 text-xs text-center sm:text-left">© 2024 Ministry of Environment. All Rights Reserved.</p>
-                        <div className="flex gap-4">
-                            <Link href="#" className="text-slate-400 text-xs hover:text-slate-600 transition">Privacy Policy</Link>
-                            <Link href="#" className="text-slate-400 text-xs hover:text-slate-600 transition">Help Center</Link>
-                        </div>
-                    </footer>
-                </div>
-            </main>
+  return (
+    <>
+      <div className="page-header">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <h2>Operations Overview</h2>
+            <p>A high-level summary of system activity, user verification, and audit trends.</p>
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 300 }}>
+            {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+          </div>
         </div>
-    );
+      </div>
+
+      <div className="summary-cards-container">
+        {/* System Health / Summary Cards */}
+        <div className="summary-card highlight">
+          <div className="summary-icon green">
+            <span className="material-symbols-outlined">verified_user</span>
+          </div>
+          <div className="summary-info">
+            <h3>Verified Users</h3>
+            <div className="summary-value">
+              {isLoading ? '—' : approvedCount}
+              <span>approved</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="summary-card">
+          <div className="summary-icon yellow" style={{ backgroundColor: '#fff7ed', color: '#ea580c' }}>
+            <span className="material-symbols-outlined">pending_actions</span>
+          </div>
+          <div className="summary-info">
+            <h3>Pending Tasks</h3>
+            <div className="summary-value">
+              12
+              <span>requests</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="summary-card">
+          <div className="summary-icon" style={{ backgroundColor: '#f0f9ff', color: '#0369a1' }}>
+            <span className="material-symbols-outlined">event_available</span>
+          </div>
+          <div className="summary-info">
+            <h3>Daily Bookings</h3>
+            <div className="summary-value">
+              8
+              <span>scheduled</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="summary-card">
+          <div className="summary-icon" style={{ backgroundColor: '#fef2f2', color: '#dc2626' }}>
+            <span className="material-symbols-outlined">report</span>
+          </div>
+          <div className="summary-info">
+            <h3>Rejections</h3>
+            <div className="summary-value">
+              {isLoading ? '—' : rejectedCount}
+              <span>actions</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', marginTop: '24px' }}>
+        {/* Main Activity Table */}
+        <div className="master-table-card" style={{ margin: 0 }}>
+          <div className="filters-section">
+            <div className="filters-header">
+              <span className="material-symbols-outlined">history</span>
+              Recent Administrative Actions
+            </div>
+          </div>
+          <div className="table-section">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Officer</th>
+                  <th>Action</th>
+                  <th>ID</th>
+                  <th>Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                {isLoading ? (
+                  <tr><td colSpan={4} style={{ textAlign: 'center', padding: '40px' }}>Syncing activity...</td></tr>
+                ) : auditLogs.slice(0, 7).map((log) => (
+                  <tr key={log.id}>
+                    <td style={{ fontSize: '13px' }}>{log.officer_email}</td>
+                    <td>
+                      <span className={`status-badge ${log.action_type === 'APPROVED' ? 'status-approved' : 'status-rejected'}`}>
+                        {log.action_type}
+                      </span>
+                    </td>
+                    <td className="req-id">{log.request_id}</td>
+                    <td style={{ fontSize: '12px', opacity: 0.7 }}>{new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="table-footer">
+              <Link href="/admin/audit-log" className="action-link">View Detailed Audit History →</Link>
+            </div>
+          </div>
+        </div>
+
+        {/* System Side Panel */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div className="master-table-card" style={{ margin: 0, padding: '24px' }}>
+            <h4 style={{ marginBottom: '16px', fontWeight: 800, fontSize: '14px', textTransform: 'uppercase', color: '#1a4a38' }}>Quick Shortcuts</h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <Link href="/admin/technicians" className="page-btn" style={{ justifyContent: 'start', textDecoration: 'none' }}>
+                <span className="material-symbols-outlined">add_moderator</span> Verify New Users
+              </Link>
+              <Link href="/admin/analytics" className="page-btn" style={{ justifyContent: 'start', textDecoration: 'none' }}>
+                <span className="material-symbols-outlined">leaderboard</span> View Quota Trends
+              </Link>
+              <Link href="/admin/bookings" className="page-btn" style={{ justifyContent: 'start', textDecoration: 'none' }}>
+                <span className="material-symbols-outlined">calendar_today</span> Manage Appointments
+              </Link>
+            </div>
+          </div>
+
+          <div className="master-table-card" style={{ margin: 0, padding: '24px', background: 'linear-gradient(135deg, #1a4a38 0%, #0d2b1f 100%)', color: 'white', border: 'none' }}>
+             <h4 style={{ marginBottom: '8px', fontWeight: 800, fontSize: '14px', color: 'rgba(255,255,255,0.6)' }}>SYSTEM STATUS</h4>
+             <div style={{ fontSize: '24px', fontWeight: 800, marginBottom: '4px' }}>OPERATIONAL</div>
+             <p style={{ fontSize: '11px', opacity: 0.7 }}>All services are running normally. Last sync: {new Date().toLocaleTimeString()}</p>
+          </div>
+        </div>
+      </div>
+    </>
+  );
 }

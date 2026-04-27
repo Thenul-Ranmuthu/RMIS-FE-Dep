@@ -223,7 +223,7 @@ export default function SignupCard() {
     try {
       setIsSendingCode(true);
       const response = await fetch(
-        `https://www.rmis.space/api/sendMail/${formData.email}`,
+        `http://localhost:5050/sendMail/${formData.email}`,
         {
           method: "GET",
         },
@@ -347,7 +347,7 @@ export default function SignupCard() {
 
       if (role === "Technician") {
         // endpoint =
-        //   "https://www.rmis.space/api/auth/technician/register";
+        //   "http://localhost:5050/auth/technician/register";
         // const formDataObj = new FormData();
         // formDataObj.append("firstName", formData.firstName);
         // formDataObj.append("lastName", formData.lastName);
@@ -403,7 +403,7 @@ export default function SignupCard() {
         });
 
         // Send verification email
-        await fetch(`https://www.rmis.space/api/sendMail/${formData.email}`, {
+        await fetch(`http://localhost:5050/sendMail/${formData.email}`, {
           method: "GET",
         });
 
@@ -412,7 +412,7 @@ export default function SignupCard() {
         router.push("/verify-email");
         return;
       } else if (role === "Company") {
-        // endpoint = `https://www.rmis.space/api/auth/company/register/${verificationCode}`;
+        // endpoint = `http://localhost:5050/auth/company/register/${verificationCode}`;
         // const companyData = {
         //     name: formData.companyName,
         //     email: formData.email,
@@ -434,7 +434,7 @@ export default function SignupCard() {
             role: role,
           }),
         );
-        await fetch(`https://www.rmis.space/api/sendMail/${formData.email}`, {
+        await fetch(`http://localhost:5050/sendMail/${formData.email}`, {
           method: "GET",
         });
         setIsLoading(false);
@@ -455,7 +455,7 @@ export default function SignupCard() {
         );
 
         // Send verification email
-        await fetch(`https://www.rmis.space/api/sendMail/${formData.email}`, {
+        await fetch(`http://localhost:5050/sendMail/${formData.email}`, {
           method: "GET",
         });
 
@@ -1593,7 +1593,7 @@ export default function SignupCard() {
           <p className="text-center text-sm text-gray-500 pb-2">
             Already have an account?{" "}
             <Link
-              href="/"
+              href="/login"
               className="text-emerald-500 font-bold hover:text-emerald-600 transition inline-flex items-center gap-1"
             >
               Sign In →
