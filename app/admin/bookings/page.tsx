@@ -6,7 +6,8 @@ import { getToken, getRole } from "@/services/authService";
 import UnauthorisedMessage from "@/components/audit-log/UnauthorisedMessage";
 import Link from "next/link";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5050";
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL || "https://www.rmis.space/api";
 
 interface ServiceTicket {
   id: number;

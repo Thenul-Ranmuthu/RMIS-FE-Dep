@@ -12,7 +12,7 @@ export default function Homepage() {
     const fetchAnnouncements = async () => {
       try {
         const baseUrl =
-          process.env.NEXT_PUBLIC_API_URL || "http://localhost:5050";
+          process.env.NEXT_PUBLIC_API_URL || "https://www.rmis.space/api";
         const response = await fetch(`${baseUrl}/public/announcements`);
         if (response.ok) {
           const data = await response.json();

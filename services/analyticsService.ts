@@ -8,19 +8,25 @@
 
 import type { AnalyticsDashboardData } from "@/types/analytics";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5050";
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://www.rmis.space/api";
 
 // ── Custom typed errors ───────────────────────────────────────
 
 export class ApiError extends Error {
-  constructor(message: string, public readonly statusCode: number) {
+  constructor(
+    message: string,
+    public readonly statusCode: number,
+  ) {
     super(message);
     this.name = "ApiError";
   }
 }
 
 export class AccessDeniedError extends ApiError {
-  constructor(message = "Ministry Administrator access is required to view analytics.") {
+  constructor(
+    message = "Ministry Administrator access is required to view analytics.",
+  ) {
     super(message, 403);
     this.name = "AccessDeniedError";
   }
@@ -47,7 +53,10 @@ async function apiFetch<T>(path: string, token?: string): Promise<T> {
   if (res.status === 401) throw new UnauthorizedError();
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new ApiError(body.message ?? `Request failed — status ${res.status}`, res.status);
+    throw new ApiError(
+      body.message ?? `Request failed — status ${res.status}`,
+      res.status,
+    );
   }
 
   return res.json() as Promise<T>;
@@ -63,6 +72,8 @@ async function apiFetch<T>(path: string, token?: string): Promise<T> {
  * @param token  JWT — pass from client; omit when called server-side
  *               (Next.js middleware will forward cookies automatically)
  */
-export async function fetchDashboardData(token?: string): Promise<AnalyticsDashboardData> {
+export async function fetchDashboardData(
+  token?: string,
+): Promise<AnalyticsDashboardData> {
   return apiFetch<AnalyticsDashboardData>("/api/v1/analytics/dashboard", token);
 }

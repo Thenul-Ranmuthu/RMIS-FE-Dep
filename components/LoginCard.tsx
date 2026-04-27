@@ -492,14 +492,14 @@ export default function LoginCard() {
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5055";
     switch (role) {
       case "Technician":
-        return "http://localhost:5050/auth/technician/login";
+        return "https://www.rmis.space/api/auth/technician/login";
       case "Company":
-        return "http://localhost:5050/auth/company/login";
+        return "https://www.rmis.space/api/auth/company/login";
       case "Public User":
         // Return a placeholder - you'll need to implement this endpoint
-        return "http://localhost:5050/auth/user/login";
+        return "https://www.rmis.space/api/auth/user/login";
       default:
-        return "http://localhost:5050/auth/technician/login";
+        return "https://www.rmis.space/api/auth/technician/login";
     }
   };
 

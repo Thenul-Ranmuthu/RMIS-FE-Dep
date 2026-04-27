@@ -4,7 +4,8 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5050";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "https://www.rmis.space/api";
 
 type TokenStatus = "validating" | "valid" | "invalid";
 type SubmitStatus = "idle" | "loading" | "success" | "error";
